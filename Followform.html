@@ -25,9 +25,123 @@
     .btn-copy-section:disabled { color:#888; border-color:#aaa; background:#eaeaea; cursor:default; }
     .hidden { display:none; }
     @media (max-width:900px){ .container, .output-box, .two-cols { flex-direction:column; } .output-col, .output-col:last-child { border:none; padding:0; } }
+
+    /* ── Import Panel ── */
+    .import-panel {
+      background: #fff8f8;
+      border: 1px solid #e8c5c5;
+      border-top: 3px solid #c0392b;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 18px;
+    }
+    .import-panel-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .import-panel-icon {
+      width: 28px; height: 28px;
+      background: #c0392b;
+      border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .import-panel-title {
+      font-weight: 700;
+      font-size: .95em;
+      color: #c0392b;
+      letter-spacing: .5px;
+    }
+    .import-panel-sub {
+      font-size: .82em;
+      color: #888;
+      margin-top: 1px;
+    }
+    .import-panel textarea {
+      width: 100%;
+      min-height: 70px;
+      border: 1px solid #dbb;
+      border-radius: 8px;
+      background: #fff;
+      font-family: 'Sarabun', sans-serif;
+      font-size: .95em;
+      padding: 9px 12px;
+      resize: vertical;
+      outline: none;
+      color: #333;
+      transition: border-color .18s, box-shadow .18s;
+      box-sizing: border-box;
+    }
+    .import-panel textarea:focus {
+      border-color: #c0392b;
+      box-shadow: 0 0 0 3px rgba(192,57,43,.1);
+    }
+    .import-panel textarea::placeholder { color: #bbb; font-size: .88em; }
+    .btn-import {
+      margin-top: 10px;
+      background: #c0392b;
+      color: #fff;
+      border: none;
+      font-size: .95em;
+      font-weight: 700;
+      padding: 9px 28px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background .15s;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-import:hover { background: #a93226; }
+    .import-badge {
+      display: inline-block;
+      background: rgba(192,57,43,.12);
+      color: #c0392b;
+      font-size: .72em;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 99px;
+      margin-left: 6px;
+      letter-spacing: .5px;
+    }
+    /* Toast */
+    #follow-toast {
+      position: fixed;
+      bottom: 30px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #c0392b;
+      color: #fff;
+      padding: 10px 28px;
+      border-radius: 99px;
+      font-size: .95em;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s, transform .25s;
+      z-index: 9999;
+      white-space: nowrap;
+    }
+    #follow-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   </style>
 </head>
 <body>
+  <div id="follow-toast"></div>
+  <!-- Import Panel -->
+  <div style="max-width:1200px; margin:32px auto 0; padding:0 16px; box-sizing:border-box;">
+    <div class="import-panel">
+      <div class="import-panel-header">
+        <div class="import-panel-icon">↩</div>
+        <div>
+          <div class="import-panel-title">นำเข้าข้อมูลอัตโนมัติ <span class="import-badge">AUTO FILL</span></div>
+          <div class="import-panel-sub">วางบันทึก CRM จากครั้งก่อน ระบบจะกรอกข้อมูลให้อัตโนมัติ</div>
+        </div>
+      </div>
+      <textarea id="import-ta" placeholder="วางข้อความบันทึก CRM ที่นี่ เช่น&#10;//ติดตามผล อ้างอิง WO123456 วันที่ ... เวลา ... น. ผู้ร้องชื่อ ... หมายเลขโทรศัพท์ ... ติดต่อเข้ามาเพื่อติดตามผล...&#10;หรือ&#10;ผู้ร้องติดตามผล อ้างอิง WO123456 (ครั้งที่ 1) วันที่ ... เวลา ... น. ..."></textarea>
+      <button class="btn-import" type="button" onclick="doImport()">↩ นำเข้าข้อมูล</button>
+    </div>
+  </div>
   <div class="container">
     <form id="trackForm" class="form-box" autocomplete="off" onsubmit="return false;">
       <h2 class="red-highlight">ฟอร์มติดตามผล</h2>
@@ -223,6 +337,112 @@
       btn.textContent = 'คัดลอกแล้ว!';
       btn.disabled = true;
       setTimeout(()=>{ btn.textContent='Copy'; btn.disabled=false; }, 1100);
+    }
+
+    // ── IMPORT (Auto Fill) ──
+    function showFollowToast(msg, color){
+      const t = document.getElementById('follow-toast');
+      t.textContent = msg;
+      t.style.background = color || '#c0392b';
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    function between(str, after, before){
+      const a = str.indexOf(after);
+      if (a === -1) return '';
+      const start = a + after.length;
+      if (!before) return str.slice(start).trim();
+      const b = str.indexOf(before, start);
+      return (b === -1 ? str.slice(start) : str.slice(start, b)).trim();
+    }
+
+    function doImport(){
+      const raw = document.getElementById('import-ta').value.trim();
+      if (!raw){ showFollowToast('กรุณาวางบันทึก CRM ก่อนครับ', '#e74c3c'); return; }
+
+      // Strip leading // or //ติดตามผล prefix
+      const text = raw.replace(/^\/\/\s*/, '');
+
+      // ── Detect format ──
+      // Format A: "ติดตามผล อ้างอิง WO... วันที่ ... เวลา ... น. ผู้ร้องชื่อ ... หมายเลขโทรศัพท์ ..."
+      // Format B: "ผู้ร้องติดตามผล อ้างอิง WO... (ครั้งที่ N) วันที่ ... เวลา ... น. ..."
+
+      let wo = '', name = '', phone = '', que = '', ocpb = '', agency = '';
+
+      if (text.startsWith('ติดตามผล อ้างอิง') || text.startsWith('ติดตามผล')){
+        // Format A — CRM Left column
+        wo    = between(text, 'อ้างอิง WO', ' วันที่').replace(/\s/g,'');
+        name  = between(text, 'ผู้ร้องชื่อ ', ' หมายเลขโทรศัพท์');
+        phone = between(text, 'หมายเลขโทรศัพท์ ', ' ติดต่อ');
+        // No round info in left CRM
+      } else if (text.startsWith('ผู้ร้องติดตามผล อ้างอิง')){
+        // Format B — CRM Right column
+        wo    = between(text, 'อ้างอิง WO', ' (ครั้งที่').replace(/\s/g,'');
+        que   = between(text, '(ครั้งที่ ', ')');
+        name  = between(text, 'ผู้ร้องชื่อ ', ' หมายเลขโทรศัพท์');
+        phone = between(text, 'หมายเลขโทรศัพท์ ', ' ติดต่อ');
+        // Detect agency
+        if (text.includes('สำนักงานคณะกรรมการคุ้มครองผู้บริโภค') || text.includes('สคบ.')){
+          agency = 'สำนักงานคณะกรรมการคุ้มครองผู้บริโภค (สคบ.)';
+          // Extract OCPB number
+          const ocRaw = between(text, 'หมายเลข OCPB', ' ');
+          ocpb = ocRaw ? 'OCPB' + ocRaw : '';
+          if (!ocpb){
+            const ocRaw2 = between(text, 'OCPB', ' ');
+            ocpb = ocRaw2 ? 'OCPB' + ocRaw2 : '';
+          }
+        } else if (text.includes('ปท.') || text.includes('สำนักป้องกัน')){
+          agency = 'สำนักป้องกันและปราบปรามการกระทำความผิดทางเทคโนโลยีสารสนเทศ (ปท.)';
+        } else if (text.includes('ศปอส.')){
+          agency = 'ศูนย์ปราบปรามอาชญากรรมทางเทคโนโลยีสารสนเทศ (ศปอส.ตร)';
+        } else if (text.includes('Facebook')){
+          agency = 'Facebook (Thailand)';
+        } else if (text.includes('หน่วยงานที่เกี่ยวข้อง')){
+          agency = 'หน่วยงานที่เกี่ยวข้อง';
+        }
+      } else {
+        showFollowToast('ไม่รู้จักรูปแบบบันทึก CRM นี้ครับ', '#e74c3c');
+        return;
+      }
+
+      // ── Fill fields ──
+      if (name)  document.getElementById('Cus_Name').value  = name;
+      if (phone) document.getElementById('Cus_Tel').value   = phone;
+      if (wo)    document.getElementById('Cus_WO').value    = wo;
+
+      // Auto-increment round if parsed
+      if (que){
+        const nextQue = parseInt(que);
+        document.getElementById('Cus_Que').value = isNaN(nextQue) ? que : nextQue + 1;
+      }
+
+      // Fill agency
+      if (agency){
+        const sel = document.getElementById('Cus_Type');
+        for (let i = 0; i < sel.options.length; i++){
+          if (sel.options[i].value === agency){
+            sel.value = agency;
+            break;
+          }
+        }
+        toggleOCPB();
+        // Fill OCPB if สคบ
+        if (agency.includes('สคบ') && ocpb){
+          document.getElementById('Cus_OCPB').value = ocpb;
+        }
+      }
+
+      // Set today + now
+      setToday('Cus_Date');
+      setNow('Cus_Time');
+
+      showFollowToast('นำเข้าสำเร็จ ✓ แก้ไขและแสดงผลได้เลยครับ', '#27ae60');
+
+      // Scroll to form
+      setTimeout(() => {
+        document.getElementById('trackForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
     }
 
     function getTopicText(){
