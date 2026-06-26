@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>ใบนำส่ง (ได้รับสินค้าไม่ตรงตามข้อตกลง/หลอกลวง)</title>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background: #f7fafc; }
+        .box { background: #fff; max-width: 800px; margin: 32px auto; padding: 36px 32px; border-radius: 20px; box-shadow: 0 8px 30px #0001; }
+        h2 { text-align:center; color: #228; letter-spacing:1px; margin-bottom: 24px;}
+        .section-title { color: #166; font-size: 1.17em; margin-top: 28px; margin-bottom: 10px; font-weight: bold; border-left: 4px solid #4fd; padding-left: 10px;}
+        .line { margin-bottom: 12px; }
+        .info-label { font-weight: bold; }
+        .main-block { margin-bottom: 34px; }
+        .value { color: #222; font-weight: bold;}
+    </style>
+</head>
+<body>
+<div class="box">
+    <h2>ใบนำส่ง (ได้รับสินค้าไม่ตรงตามข้อตกลง/หลอกลวง)</h2>
+    <div id="deliver-area"></div>
+</div>
+<script>
+function escape(s) { return (s||"").replace(/[<>&"]/g, m=>({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[m])); }
+function safe(s) { return s && s.trim() !== "" ? escape(s) : "..."; }
+function renderDeliver() {
+    let data = {};
+    try { data = JSON.parse(localStorage.getItem("directPayCase") || "{}"); } catch {}
+
+    // ----- ข้อมูลผู้แจ้ง -----
+    let html = `<div class="main-block">
+        <div class="section-title">ข้อมูลผู้แจ้ง</div>
+        <div class="line"><span class="info-label">ชื่อ - นามสกุล:</span> <span class="value">${safe(data.Complainant_Name)}</span></div>
+        <div class="line"><span class="info-label">ที่อยู่:</span> <span class="value">${safe(data.Complainant_Address)}</span></div>
+        <div class="line"><span class="info-label">เบอร์โทรศัพท์หลัก:</span> <span class="value">${safe(data.Complainant_Tel)}</span></div>
+        <div class="line"><span class="info-label">เลขบัตรประชาชน:</span> <span class="value">${safe(data.Complainant_ID)}</span></div>
+        <div class="line"><span class="info-label">ข้อมูลผู้แจ้งเพิ่มเติม:</span> <span style="color:#a00">กรุณาดูจาก CRM หรือ Line ของผู้ร้องใน CRM</span></div>
+    </div>`;
+
+    // ----- เรื่องที่แจ้ง -----
+    let eventText = (localStorage.getItem("directPayCase_result")||"").replace(/\n+/g," ");
+    if(!eventText) {
+        eventText = `กรณีได้รับสินค้าไม่ตรงตามข้อตกลง (หลอกลวง) เป็น ${safe(data.Product_Name||"...")}`;
+    }
+    let orderDate = safe(data.Order_Date);
+    let orderTime = safe(data.Order_Time);
+    html += `<div class="main-block">
+        <div class="section-title">เรื่องที่แจ้ง</div>
+        <div class="line"><span class="info-label">พฤติการณ์:</span> ${eventText}</div>
+        <div class="line"><span class="info-label">วันเวลาที่เกิดเหตุ:</span> วันที่ <span class="value">${orderDate}</span> เวลา <span class="value">${orderTime}</span> น.</div>
+        <div class="line"><span class="info-label">สถานที่เกิดเหตุ:</span> <span class="value">${safe(data.Buying_Address)}</span></div>
+        <div class="line"><span class="info-label">จำนวนความเสียหาย (คน):</span> <span style="color:#a00">กรุณาคำนวณจากเคสเอง</span></div>
+        <div class="line"><span class="info-label">มูลค่าความเสียหาย:</span> <span class="value">${safe(data.Product_Price||"")}</span> บาท</div>
+    </div>`;
+
+    // ----- พยานหลักฐานประกอบการแจ้ง -----
+    let bankInfo = "";
+    if (data.Bank_To_Name || data.Bank_To_Number || data.Bank_To) {
+        bankInfo = `บัญชีธนาคาร ${safe(data.Bank_To)} ${safe(data.Bank_To_Name)} ${safe(data.Bank_To_Number)}`;
+    } else if (data.Bank_To_Other) {
+        bankInfo = `บัญชีธนาคาร ${safe(data.Bank_To_Other)} ${safe(data.Bank_To_Name)} ${safe(data.Bank_To_Number)}`;
+    }
+    html += `<div class="main-block">
+        <div class="section-title">พยานหลักฐานประกอบการแจ้ง</div>
+        <div class="line"><span class="info-label">บัญชีธนาคารของผู้เสียหาย:</span> <span class="value">${bankInfo}</span></div>
+    </div>`;
+
+    // ----- ผู้กล่าวหา -----
+    let sellerTelText = data.Seller_Tel && data.Seller_Tel !== "..." 
+        ? `<span class="value">${safe(data.Seller_Tel)}</span>`
+        : '<span style="color:#a00">ไม่ทราบเบอร์โทรศัพท์ผู้จำหน่าย</span>';
+    let sellerName = safe(data.Seller_Name);
+    let sellerUrl = safe(data.Seller_URL);
+    html += `<div class="main-block">
+        <div class="section-title">ผู้กล่าวหา</div>
+        <div class="line"><span class="info-label">ชื่อนาม-สกุล / ชื่อเล่น-ฉายา:</span> <span class="value">${sellerName}</span></div>
+        <div class="line"><span class="info-label">ที่อยู่:</span> <span style="color:#a00">กรุณาตรวจสอบในตัวเคส</span></div>
+        <div class="line"><span class="info-label">เลขบัตรประชาชน:</span> <span style="color:#a00">กรุณาตรวจสอบในตัวเคส</span></div>
+        <div class="line"><span class="info-label">ช่องทางการติดต่อ:</span></div>
+        <div class="line" style="margin-left:2em;"><span class="info-label">เบอร์โทรศัพท์</span> ${sellerTelText}</div>
+        <div class="line" style="margin-left:2em;"><span class="info-label">Line ชื่อ</span> …………….URL………………………………</div>
+        <div class="line" style="margin-left:2em;"><span class="info-label">Facebook ชื่อ</span> ${sellerName ? sellerName : "……………. "} URL ${sellerUrl ? sellerUrl : "………………………………"}</div>
+        <div class="line" style="margin-left:2em;"><span class="info-label">Instagram ชื่อ</span> …………….URL………………………………</div>
+        <div class="line" style="margin-left:2em;"><span class="info-label">อื่นๆ</span> กรุณาตรวจสอบเพิ่มเติม หากมีช่องทางอื่นๆ</div>
+        <div class="line"><span class="info-label">เลขบัญชีธนาคาร:</span> <span class="value">${bankInfo}</span></div>
+    </div>`;
+
+    // ----- ประเภทความผิด -----
+    html += `<div class="main-block">
+        <div class="section-title">ประเภทความผิด</div>
+        <div class="line"><span class="value">ได้รับสินค้า (หลอกลวง)</span></div>
+    </div>`;
+
+    // ----- ไปแจ้งความที่ -----
+    let policeBlock = '';
+    if(data.PoliceType === "สถานีตำรวจ") {
+        let policeStationType = data.PoliceStationType || "…";
+        let policeStationTypeText = policeStationType;
+        policeBlock = `<span class="info-label">แจ้งความที่สถานีตำรวจ${policeStationTypeText}</span> <span class="value">${safe(data.PoliceStation_name)}</span>
+        <span class="info-label">จังหวัด</span> <span class="value">${safe(data.PoliceStation_province)}</span>
+        <span class="info-label">วันที่</span> <span class="value">${safe(data.PoliceStation_date)}</span>
+        <span class="info-label">เวลา</span> <span class="value">${safe(data.PoliceStation_time)}</span> น.`;
+    } else if(data.PoliceType === "ออนไลน์") {
+        let policeOnlineDateType = "";
+        if(data.PoliceOnlineDateType === "วันที่แจ้งเหตุ") policeOnlineDateType = "วันที่แจ้งเหตุ";
+        else if(data.PoliceOnlineDateType === "วันที่นัดหมาย") policeOnlineDateType = "วันที่นัดหมาย";
+        else policeOnlineDateType = "วันที่ ............";
+        policeBlock = `<span class="info-label">แจ้งความออนไลน์ผ่าน</span> <span class="value">www.thaipoliceonline.go.th</span>
+        <span class="info-label">เลขรับแจ้งความออนไลน์</span> <span class="value">${safe(data.PoliceOnline_Number)}</span>
+        <span class="info-label">${policeOnlineDateType}</span> <span class="value">${safe(data.PoliceOnline_date)}</span>
+        <span class="info-label">เวลา</span> <span class="value">${safe(data.PoliceOnline_time)}</span> น.`;
+    }
+    html += `<div class="main-block">
+        <div class="section-title">ไปแจ้งความที่</div>
+        <div class="line">${policeBlock}</div>
+    </div>`;
+
+    document.getElementById("deliver-area").innerHTML = html;
+}
+window.addEventListener('DOMContentLoaded', renderDeliver);
+</script>
+</body>
+</html>

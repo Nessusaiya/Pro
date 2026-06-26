@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COSMOS - Mission Control Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --sidebar-width: 280px;
+            --primary-dark: #0f172a;
+            --accent-blue: #3b82f6;
+            --accent-gold: #fbbf24;
+            --accent-green: #10b981;
+            --module-blue-bg: #eff6ff;
+            --admin-red-bg: #fff1f2;
+            --create-gray-bg: #f1f5f9;
+            --bg-light: #f8fafc;
+        }
+
+        * { box-sizing: border-box; transition: all 0.2s ease; }
+        body { font-family: 'Sarabun', sans-serif; margin: 0; display: flex; height: 100vh; background-color: var(--bg-light); overflow: hidden; color: #1e293b; }
+
+        /* --- Sidebar --- */
+        .sidebar { width: var(--sidebar-width); background: #ffffff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; padding: 15px; z-index: 100; overflow-y: auto; }
+        .brand { padding: 5px 10px 20px; font-size: 1.4rem; font-weight: 800; color: var(--primary-dark); cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .nav-label { font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; font-weight: 800; margin: 12px 0 6px 10px; }
+        
+        .nav-item { 
+            width: 100%; 
+            display: flex; 
+            align-items: center; 
+            padding: 10px 12px; 
+            border-radius: 10px; 
+            color: #64748b; 
+            border: 1px solid transparent; 
+            cursor: pointer; 
+            font-size: 0.85rem; 
+            margin-bottom: 4px; 
+            gap: 10px; 
+            position: relative; 
+            font-family: inherit; 
+            background: none; 
+            text-align: left;
+            white-space: nowrap; 
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .nav-create { background-color: var(--create-gray-bg); color: #334155; font-weight: 600; }
+        .nav-module { background-color: var(--module-blue-bg); color: #1e40af; }
+        .nav-admin { background-color: var(--admin-red-bg); color: #9f1239; }
+        
+        .nav-item:hover { transform: translateX(3px); background-color: #f8fafc; }
+        .nav-item.active { background: var(--primary-dark) !important; color: #fff !important; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2); }
+
+        /* --- Effects --- */
+        .priority-glow { border: 1.2px solid var(--accent-gold) !important; }
+        .priority-glow::after { content: ''; width: 5px; height: 5px; background: var(--accent-gold); border-radius: 50%; position: absolute; right: 8px; animation: pulse 2s infinite; }
+        .success-glow { border: 1.2px solid var(--accent-green) !important; }
+        .success-glow::after { content: ''; width: 5px; height: 5px; background: var(--accent-green); border-radius: 50%; position: absolute; right: 8px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        /* --- Main Layout --- */
+        .main-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .header-bar { height: 60px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 25px; }
+        .content-area { flex: 1; position: relative; overflow-y: auto; background: #f8fafc; }
+        .tool-view-iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; display: none; }
+        .tool-view-iframe.active { display: block; }
+
+        /* --- Dashboard UI --- */
+        #home-view { padding: 25px; }
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: white; padding: 18px; border-radius: 14px; border: 1px solid #e2e8f0; }
+        .data-card { background: white; border-radius: 18px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 4px 15px rgba(0,0,0,0.02); margin-bottom: 25px; }
+        
+        /* --- Google Sheet Container (85% Zoom) --- */
+        .google-sheet-container { background: white; border-radius: 18px; padding: 20px; border: 1px solid #e2e8f0; margin-top: 10px; }
+        .sheet-wrapper { position: relative; padding-bottom: 65%; height: 0; overflow: hidden; border-radius: 10px; background: #f1f5f9; }
+        .sheet-wrapper iframe { position: absolute; top: 0; left: 0; width: 117.65%; height: 117.65%; transform: scale(0.85); transform-origin: 0 0; border: none; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 10px; color: #94a3b8; font-size: 0.8rem; border-bottom: 2px solid #f1f5f9; }
+        td { padding: 12px 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+        
+        .input-search { padding: 8px 15px; border-radius: 10px; border: 1px solid #e2e8f0; width: 280px; outline: none; font-family: inherit; font-size: 0.9rem; }
+        .btn-reset { margin-top: 15px; padding: 10px; border-radius: 8px; background: #fff; border: 1px solid #e2e8f0; color: #64748b; cursor: pointer; font-weight: 600; width: 100%; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="brand" onclick="showDashboard()">⚡ COSMOS</div>
+
+        <div class="nav-group">
+            <div class="nav-label">Home</div>
+            <button class="nav-item active" id="menu-home" onclick="showDashboard()">🏠 แผงควบคุม (Dashboard)</button>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-label">สร้างเคสร้องเรียน</div>
+            <button class="nav-item nav-create" onclick="openTool('form.html', this, false, 'v-f1')">➕ สร้างเคสใหม่</button>
+            <button class="nav-item nav-create" onclick="openTool('form_productfail.html', this, false, 'v-f2')">📦 ชำระปลายทาง</button>
+            <button class="nav-item nav-create" onclick="openTool('form_directpay.html', this, false, 'v-f3')">💸 โอนเงินตรง</button>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-label">Call Center</div>
+            <button class="nav-item nav-module priority-glow" onclick="openTool('Followform.html', this, false, 'v-follow')">🔍 ผู้ร้องติดตามผล</button>
+            <button class="nav-item nav-module success-glow" onclick="openTool('pre_assessment.html', this, false, 'v-pre')">📋 แบบประเมินรับเคส</button>
+            <button class="nav-item nav-module" onclick="openTool('Close.html', this, false, 'v-close')">🚫 แจ้งเนื้อหาไม่เหมาะสม</button>
+            <button class="nav-item nav-module" onclick="openTool('report_form.html', this, false, 'v-report')">⚠️ ปิดกั้น/แฮก/แอบอ้าง</button>
+            <button class="nav-item nav-module" onclick="openTool('OB.html', this, false, 'v-ob')">🔠 OB Tool (Outbound)</button>
+            <button class="nav-item nav-module" style="border: 1px solid #fca5a5;" onclick="openTool('outbound.html', this, false, 'v-outbound')">📞 Outbound (ใหม่)</button>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-label">Administrator</div>
+            <button class="nav-item nav-admin priority-glow" onclick="openTool('Document-Status-Tracker.html', this, false, 'v-admin-doc')">✅❌ ตรวจเอกสาร (ADMIN)</button>
+            <button class="nav-item nav-admin" onclick="openTool('Police-Coordination-Result.html', this, false, 'v-admin-police')">📞 แจ้งผล ศปอส.ตร (ADMIN)</button> <button class="nav-item nav-admin" onclick="openTool('OCPB-Coordination-Result.html', this, false, 'v-admin-ocpb')">💬 แจ้งผล สคบ. (ADMIN)</button>
+            <button class="nav-item nav-admin" onclick="openTool('document_sorter.html', this, true)">📂 เรียงเอกสาร (Tab)</button>
+        </div>
+
+        <button class="btn-reset" onclick="resetAllViews()">🔄 รีเซ็ตหน้าย่อยทั้งหมด</button>
+    </div>
+
+    <div class="main-wrapper">
+        <div class="header-bar">
+            <div id="view-title" style="font-weight: 800; font-size: 1rem;">Dashboard</div>
+            <button id="btnBack" style="display:none; background:#1e293b; color:white; border:none; padding:8px 16px; border-radius:10px; cursor:pointer; font-size:0.9rem;" onclick="showDashboard()">↩️ กลับหน้าหลัก</button>
+        </div>
+
+        <div class="content-area" id="iframe-container">
+            <div id="home-view">
+                <div class="stat-grid">
+                    <div class="stat-card" style="border-top: 3px solid #1e293b;"><div style="font-size:0.7rem; color:#64748b; font-weight:700;">เคสทั้งหมด</div><div style="font-size:1.6rem; font-weight:800;" id="stat-total">0</div></div>
+                    <div class="stat-card" style="border-top: 3px solid #3b82f6;"><div style="font-size:0.7rem; color:#64748b; font-weight:700;">เคสใหม่วันนี้</div><div style="font-size:1.6rem; font-weight:800;">0</div></div>
+                    <div class="stat-card" style="border-top: 3px solid #fbbf24;"><div style="font-size:0.7rem; color:#64748b; font-weight:700;">รอดำเนินการ</div><div style="font-size:1.6rem; font-weight:800;">0</div></div>
+                    <div class="stat-card" style="border-top: 3px solid #10b981;"><div style="font-size:0.7rem; color:#64748b; font-weight:700;">เสร็จสิ้น</div><div style="font-size:1.6rem; font-weight:800;">0</div></div>
+                </div>
+
+                <div class="data-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <h3 style="margin:0; font-size:1.1rem;">📋 รายการที่บันทึกล่าสุด</h3>
+                        <input type="text" id="searchInput" class="input-search" onkeyup="searchCase()" placeholder="🔍 ค้นหาชื่อ/เบอร์...">
+                    </div>
+                    <table>
+                        <thead><tr><th>ชื่อเคส</th><th>ผู้ร้อง</th><th>เบอร์โทรศัพท์</th><th style="text-align:right;">จัดการ</th></tr></thead>
+                        <tbody id="caseTbody"></tbody>
+                    </table>
+                </div>
+
+                <div class="google-sheet-container">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <h3 style="margin:0; color:#1e293b; font-size:1.1rem;">📊 ตาราง Dashboard งานค้าง (Internal)</h3>
+                            <span style="font-size:0.65rem; background:#e0f2fe; color:#0369a1; padding:2px 8px; border-radius:10px; font-weight:700;">🔒 PRIVATE</span>
+                        </div>
+                        <a href="https://docs.google.com/spreadsheets/d/1s20fvXsCTjWFrb2LKdnq0qY1i2UIne0cLymbS38Naq8/edit" target="_blank" style="font-size:0.75rem; color:#3b82f6; text-decoration:none;">📂 เปิดใน Sheets</a>
+                    </div>
+                    <div class="sheet-wrapper">
+                        <iframe src="https://docs.google.com/spreadsheets/d/1s20fvXsCTjWFrb2LKdnq0qY1i2UIne0cLymbS38Naq8/edit?rm=minimal"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openTool(url, menuElement, isNewTab = false, viewId = null) {
+            if (isNewTab) { window.open(url, '_blank'); return; }
+            document.getElementById('home-view').style.display = 'none';
+            document.querySelectorAll('.tool-view-iframe').forEach(i => i.classList.remove('active'));
+            let target = document.getElementById(viewId);
+            if (!target && viewId) {
+                target = document.createElement('iframe');
+                target.id = viewId; target.className = 'tool-view-iframe';
+                target.src = url;
+                document.getElementById('iframe-container').appendChild(target);
+            }
+            if (target) target.classList.add('active');
+            document.getElementById('btnBack').style.display = 'block';
+            if(menuElement) {
+                document.getElementById('view-title').innerText = menuElement.innerText.trim();
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                menuElement.classList.add('active');
+            }
+        }
+
+        function showDashboard() {
+            document.getElementById('home-view').style.display = 'block';
+            document.querySelectorAll('.tool-view-iframe').forEach(i => i.classList.remove('active'));
+            document.getElementById('btnBack').style.display = 'none';
+            document.getElementById('view-title').innerText = "Dashboard";
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('menu-home').classList.add('active');
+            renderCases();
+        }
+
+        function renderCases(filter = "") {
+            const allCases = JSON.parse(localStorage.getItem("myCases") || "[]");
+            const tbody = document.getElementById('caseTbody');
+            document.getElementById('stat-total').innerText = allCases.length;
+            tbody.innerHTML = '';
+            const searchTxt = filter.toLowerCase();
+            const filtered = allCases.filter(c => {
+                const cName = (c.name || "").toLowerCase();
+                const uName = (c.data?.Complainant_Name || c.data?.Complainant_Name1 || "").toLowerCase();
+                const uTel = (c.data?.Complainant_Tel || c.data?.Complainant_Tel1 || "").toLowerCase();
+                return cName.includes(searchTxt) || uName.includes(searchTxt) || uTel.includes(searchTxt);
+            });
+            filtered.reverse().forEach((c) => {
+                const realIdx = allCases.indexOf(c);
+                tbody.innerHTML += `<tr><td><b>${c.name||'N/A'}</b></td><td>${c.data?.Complainant_Name||'-'}</td><td>${c.data?.Complainant_Tel||'-'}</td><td style="text-align:right;"><button style="color:#3b82f6; cursor:pointer; background:none; border:none; text-decoration:underline; font-weight:700;" onclick="openExistingCase(${realIdx})">เปิด</button><button style="color:#ef4444; margin-left:12px; cursor:pointer; background:none; border:none; opacity:0.4;" onclick="deleteCase(${realIdx})">ลบ</button></td></tr>`;
+            });
+        }
+
+        function searchCase() { renderCases(document.getElementById('searchInput').value); }
+        function deleteCase(idx) { if(confirm("ลบเคสนี้?")) { let a = JSON.parse(localStorage.getItem("myCases") || "[]"); a.splice(idx, 1); localStorage.setItem("myCases", JSON.stringify(a)); renderCases(); } }
+        function openExistingCase(idx) {
+            const a = JSON.parse(localStorage.getItem("myCases") || "[]");
+            const c = a[idx];
+            let f = c.type === "productfail" ? "form_productfail.html" : (c.type === "directpay" ? "form_directpay.html" : "form.html");
+            openTool(`${f}?case=${idx}`, null, false, `case-${idx}`);
+        }
+        function resetAllViews() { if(confirm("รีเซ็ตหน้าจอทั้งหมด?")) { document.querySelectorAll('.tool-view-iframe').forEach(i => i.remove()); showDashboard(); } }
+        window.onload = renderCases;
+    </script>
+</body>
+</html>

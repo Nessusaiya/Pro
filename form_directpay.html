@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>ฟอร์มร้องเรียน (ชำระเงินให้ร้านค้า/ผู้จำหน่ายโดยตรง)</title>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background: #f7f7f7; }
+        .form-box { background: #fff; max-width: 900px; margin: 24px auto; padding: 32px; border-radius: 18px; box-shadow: 0 6px 24px #0002;}
+        label { display: block; margin-top: 10px; }
+        input, select, textarea { font-family: inherit; font-size: 1em; margin: 4px 0 10px; padding: 8px; border: 1px solid #bbb; border-radius: 8px; }
+        .inline { display: inline-block; margin-right: 12px; }
+        .result-box { background: #f3f5fa; border-radius: 18px; margin-top: 32px; padding: 24px; white-space: pre-line; font-size: 1.05em; border: 1px solid #e0e3ea;}
+        .hidden { display: none; }
+        .radio-wrap { margin-bottom: 6px; }
+        .query-btn { font-size: .92em; padding: 2px 10px; border-radius: 6px; border: 1px solid #aaa; background: #e9ecef; cursor:pointer; margin-left: 6px;}
+        .back-btn { margin-top:18px; background:#eaf;color:#256; border-radius:7px; border:1px solid #abf; padding: 6px 18px;}
+        .next-btn { background: #24a19c; color: #fff; border-radius: 7px; border: none; margin-left: 10px; padding: 8px 22px; }
+        a.next-btn { padding: 8px 22px; text-decoration:none; display:inline-block; }
+        .section-title { font-weight:bold; color:#d97706; }
+    </style>
+</head>
+<body>
+<div class="form-box">
+    <h2>ฟอร์มร้องเรียน<br>ชำระเงินให้ร้านค้า/ผู้จำหน่ายโดยตรง</h2>
+    <form id="directPayForm" autocomplete="off">
+        <label>
+            ผู้ร้องได้รับสินค้าไม่ตรงตามข้อตกลง เนื่องจากผู้ร้องสั่งซื้อเป็น 
+            <input type="text" id="Product_Name" required>
+            แต่ได้รับสินค้าเป็น 
+            <input type="text" id="Product_Fail" required>
+        </label>
+        <label>ผู้ร้องชื่อ <input type="text" id="Complainant_Name" required></label>
+        <label>หมายเลขโทรศัพท์ <input type="text" id="Complainant_Tel" required></label>
+        <label>หมายเลขบัตรประจำตัวประชาชน <input type="text" id="Complainant_ID" required></label>
+        <label>
+            ที่อยู่ที่สามารถติดต่อได้ <textarea id="Complainant_Address" required></textarea>
+        </label>
+        <label>
+            ที่อยู่ตามบัตรประจำตัวประชาชน 
+            <textarea id="Complainant_AddressID" required></textarea>
+            <button type="button" class="query-btn" onclick="copyAddress()">คัดลอกจากที่อยู่ปัจจุบัน</button>
+        </label>
+        <label>
+            ผู้ร้องสั่งซื้อเป็น 
+            <input type="text" id="Product_Name2" readonly style="width:180px;">
+            จำนวน <input type="text" id="Product_Qty" style="width:110px;" required>
+            ราคา <input type="number" id="Product_Price" min="1" step="0.01" style="width:120px;" required oninput="updateThaiPrice()"> บาท 
+            (<input type="text" id="Product_Price_text" style="width:230px;" readonly>บาทถ้วน)  
+            <span class="radio-wrap">
+                <input type="radio" name="Use_Type" value="เพื่อนำไปใช้เอง" required> เพื่อนำไปใช้เอง 
+                <input type="radio" name="Use_Type" value="เพื่อจำหน่ายต่อ"> เพื่อจำหน่ายต่อ
+            </span>
+        </label>
+        <label>
+            ผู้ร้องพบเห็นโพสต์จำหน่ายสินค้าผ่านช่องทาง 
+            <select id="Seller_Channel" onchange="toggleOtherChannel('Seller_Channel', 'Seller_Channel_Other')">
+                <option value="">-- เลือก --</option>
+                <option>Facebook</option>
+                <option>YouTube</option>
+                <option>Line</option>
+                <option>Instagram</option>
+                <option>TikTok</option>
+                <option>WeChat</option>
+                <option>Facebook Messenger</option>
+                <option>Telegram</option>
+                <option>Snapchat</option>
+                <option>X</option>
+                <option>อื่นๆ</option>
+            </select>
+            <input id="Seller_Channel_Other" class="hidden" placeholder="โปรดระบุช่องทางอื่นๆ">
+            ชื่อ <input type="text" id="Seller_Name" style="width:140px;">
+            (URL : <input type="text" id="Seller_URL" style="width:200px;"> )
+        </label>
+        <div>
+            มีหมายเลขโทรศัพท์ผู้จำหน่ายหรือไม่ 
+            <input type="radio" name="SellerTelRadio" value="ไม่มี" checked onclick="toggleTelBox('Seller_Tel', false)"> ไม่มี
+            <input type="radio" name="SellerTelRadio" value="มี" onclick="toggleTelBox('Seller_Tel', true)"> มี
+            <span id="Seller_Tel_wrap" class="hidden">
+                หมายเลขโทรศัพท์ผู้จำหน่าย <input type="number" id="Seller_Tel">
+            </span>
+        </div>
+        <label>
+            เป็นการสั่งซื้อสินค้าแบบ
+            <input type="radio" name="Order_Type" value="มีสินค้าทันที" checked onclick="togglePreOrder(false)"> มีสินค้าทันที
+            <input type="radio" name="Order_Type" value="Pre-order" onclick="togglePreOrder(true)"> Pre-order
+            <span id="PreOrder_wrap" class="hidden">
+                กำหนดส่งสินค้า <input type="number" id="PreOrder_Days" min="1" style="width:60px;"> วัน
+            </span>
+        </label>
+        <label>
+            ช่องทางการติดต่อเมื่อเวลาสั่งซื้อผ่าน
+            <select id="Contact_Channel" onchange="toggleOtherChannel('Contact_Channel','Contact_Channel_Other')">
+                <option value="">-- เลือก --</option>
+                <option>Facebook Messenger</option>
+                <option>YouTube</option>
+                <option>Line</option>
+                <option>Instagram</option>
+                <option>TikTok</option>
+                <option>WeChat</option>
+                <option>Telegram</option>
+                <option>Snapchat</option>
+                <option>X</option>
+                <option>อื่นๆ</option>
+            </select>
+            <input id="Contact_Channel_Other" class="hidden" placeholder="โปรดระบุช่องทางอื่นๆ">
+        </label>
+        <div>
+            มีหมายเลขคำสั่งซื้อหรือไม่ 
+            <input type="radio" name="OrderNumberRadio" value="ไม่มี" checked onclick="toggleTelBox('Order_Number', false)"> ไม่มี
+            <input type="radio" name="OrderNumberRadio" value="มี" onclick="toggleTelBox('Order_Number', true)"> มี
+            <span id="Order_Number_wrap" class="hidden">
+                หมายเลขคำสั่งซื้อ <input type="text" id="Order_Number">
+            </span>
+        </div>
+        <label>
+            ผู้ร้องทำการสั่งซื้อสินค้าในเขตพื้นที่ 
+            <textarea id="Buying_Address" required></textarea>
+            <button type="button" class="query-btn" onclick="copyAddress2()">คัดลอกจากที่อยู่ติดต่อได้</button>
+        </label>
+
+        <!-- เลือกจำนวนครั้งที่โอน -->
+        <div>
+            <b>การชำระเงิน:</b>
+            <input type="radio" name="PayTimes" value="1" checked onclick="togglePayTimes(false)"> โอนครั้งเดียว
+            <input type="radio" name="PayTimes" value="many" onclick="togglePayTimes(true)"> โอนหลายครั้ง
+            <span id="PayTimes_box" class="hidden">
+                <br>
+                <textarea id="PayTimes_Multi" placeholder="ใส่รายละเอียดการโอนเงินแต่ละครั้ง"></textarea>
+            </span>
+        </div>
+
+        <label>
+            โดยผู้ร้องได้ทำการสั่งซื้อสินค้า และชำระเงินให้กับร้านค้าผ่านระบบ Mobile Internet Banking จาก
+            <span id="StartBank_bank">
+                บัญชีธนาคาร <input type="text" id="StartBank_Name" style="width:140px;">
+                หมายเลขบัญชี <input type="text" id="StartBank_Number" style="width:140px;">
+                ชื่อบัญชี <input type="text" id="StartBank_UserName" style="width:140px;">
+                <button type="button" class="query-btn" onclick="copyNameToStartBank()">คัดลอกจากชื่อผู้ร้องเรียน</button>
+            </span>
+            ไปยังบัญชีธนาคาร:
+            <input type="radio" name="EndBankType" value="bank" checked onclick="toggleEndBankType('bank')"> บัญชีธนาคาร
+            <input type="radio" name="EndBankType" value="promptpay" onclick="toggleEndBankType('promptpay')"> บัญชีพร้อมเพย์
+            <span id="EndBank_bank">
+                <br>
+                ธนาคาร <input type="text" id="EndBank_Name" style="width:140px;">
+                หมายเลขบัญชี <input type="text" id="EndBank_Number" style="width:140px;">
+                ชื่อบัญชี <input type="text" id="EndBank_UserName" style="width:140px;">
+            </span>
+            <span id="EndBank_promptpay" class="hidden">
+                <br>
+                หมายเลข <input type="text" id="EndPromptPay_Number" style="width:140px;">
+                ชื่อบัญชี <input type="text" id="EndPromptPay_UserName" style="width:140px;">
+            </span>
+            วันที่ <input type="text" id="Transfer_Date" style="width:130px;">
+            เวลา <input type="text" id="Transfer_Time" style="width:100px;">
+        </label>
+
+        <label>
+            หลังจากโอนเงินผู้ร้องแจ้งชื่อ และที่อยู่ในการรับสินค้าเป็นชื่อ
+            <input type="text" id="Order_Name">
+            <button type="button" class="query-btn" onclick="fillRecieverName()">คัดลอกจากชื่อผู้ร้อง</button>
+            ที่อยู่ <textarea id="Order_Address"></textarea>
+            <button type="button" class="query-btn" onclick="fillRecieverAddr()">คัดลอกจากที่อยู่ผู้ร้อง</button>
+        </label>
+        <label>
+            ผู้จำหน่ายแจ้งว่าจะทำการจัดส่งสินค้าให้ในวันที่ 
+            <input type="text" id="Confirm_Date">
+        </label>
+        <label>
+            ต่อมาวันที่ 
+            <input type="text" id="Receive_Date">
+            เวลา <input type="text" id="Receive_Time">
+            ผู้ร้องได้รับสินค้า ซึ่งจัดส่งผ่านทาง 
+            <select id="Shipping_Company" onchange="toggleOtherChannel('Shipping_Company','Shipping_Company_Other')">
+                <option value="">-- เลือก --</option>
+                <option>บริษัท ไปรษณีย์ไทย จำกัด (ปณท)</option>
+                <option>บริษัท เคอรี่ เอ็กซ์เพรส (ประเทศไทย) จำกัด (มหาชน)</option>
+                <option>บริษัท เจ แอนด์ ที เอ็กซ์เพรส จำกัด</option>
+                <option>บริษัท นินจา แวน (Ninja Van)</option>
+                <option>บริษัท แฟลช เอ็กซ์เพรส จำกัด</option>
+                <option>บริษัท เบสท์ โลจิสติกส์ เทคโนโลยี (ประเทศไทย) จำกัด</option>
+                <option>บริษัท เอสพีเอ็กซ์ เอ็กซ์เพรส (ประเทศไทย) จำกัด</option>
+                <option>บริษัท ลาซาด้า เอ็กซ์เพรส จำกัด</option>
+                <option>อื่นๆ</option>
+            </select>
+            <input id="Shipping_Company_Other" class="hidden" placeholder="โปรดระบุบริษัทขนส่งอื่นๆ">
+            หมายเลขพัสดุ <input type="text" id="Parcel_ID">
+            ผู้จัดส่งชื่อ <input type="text" id="Sender_Name">
+            หมายเลขโทรศัพท์ผู้จำหน่าย <input type="text" id="Sender_Tel">
+            ที่อยู่ผู้จัดส่ง <textarea id="Sender_Address"></textarea>
+        </label>
+
+        <!-- ==== เริ่ม Block เพิ่มเติม ==== -->
+        <div style="margin-bottom:10px;">
+          <b>เลือกประเภท:</b>
+          <input type="radio" name="FailPattern" value="notmatch" checked onclick="toggleFailPattern('notmatch')"> ได้รับสินค้าไม่ตรงตามข้อตกลง
+          <input type="radio" name="FailPattern" value="fake" onclick="toggleFailPattern('fake')"> ได้รับสินค้าปลอม/ผิดกฎหมาย
+        </div>
+        <div id="failNotMatchBox">
+          <label>
+            หลังจากตรวจสอบสินค้าพบว่าได้รับสินค้าไม่ตรงตามข้อตกลง เนื่องจากผู้ร้องสั่งซื้อเป็น 
+            <input type="text" id="Product_Name3" readonly>
+            จำนวน <input type="text" id="Product_Qty2" readonly>
+            แต่ได้รับสินค้าเป็น <input type="text" id="Product_Fail2" readonly>
+            จำนวน <input type="text" id="Product_FailQty">
+          </label>
+          <label>
+            ผู้ร้องได้ทำการติดต่อไปยังผู้จำหน่ายอีกครั้ง ติดต่อไปวันที่ 
+            <input type="text" id="Contact_Date">
+            ผ่านช่องทาง
+            <select id="Contact_Channel2" onchange="toggleOtherChannel('Contact_Channel2','Contact_Channel2_Other')">
+                <option value="">-- เลือก --</option>
+                <option>Facebook</option>
+                <option>YouTube</option>
+                <option>Line</option>
+                <option>Instagram</option>
+                <option>TikTok</option>
+                <option>WeChat</option>
+                <option>Facebook Messenger</option>
+                <option>Telegram</option>
+                <option>Snapchat</option>
+                <option>X</option>
+                <option>อื่นๆ</option>
+            </select>
+            <input id="Contact_Channel2_Other" class="hidden" placeholder="โปรดระบุช่องทางอื่นๆ">
+            ซึ่งผู้จำหน่ายแจ้งว่า <textarea id="Contact_Awnser"></textarea>
+          </label>
+        </div>
+        <div id="failFakeBox" class="hidden">
+          <label>
+            หลังจากตรวจสอบสินค้าพบว่าได้รับสินค้าผิดกฎหมาย (สินค้าปลอม) เนื่องจากผู้ร้องสั่งซื้อเป็น 
+            <input type="text" id="Fake_Product_Name">
+            จำนวน <input type="text" id="Fake_Product_Qty">
+            แต่ได้รับสินค้าเป็น <input type="text" id="Fake_Product_Fail">
+            จำนวน <input type="text" id="Fake_Product_FailQty">
+          </label>
+          <label>
+            จุดสังเกตที่พบว่าปลอม <textarea id="Fake_Notice"></textarea>
+          </label>
+          <label>
+            ผู้ร้องได้ทำการติดต่อไปยังผู้จำหน่ายอีกครั้ง ติดต่อไปวันที่ 
+            <input type="text" id="Contact_Date_fake">
+            ผ่านช่องทาง
+            <select id="Contact_Channel2_fake" onchange="toggleOtherChannel('Contact_Channel2_fake','Contact_Channel2_Other_fake')">
+                <option value="">-- เลือก --</option>
+                <option>Facebook</option>
+                <option>YouTube</option>
+                <option>Line</option>
+                <option>Instagram</option>
+                <option>TikTok</option>
+                <option>WeChat</option>
+                <option>Facebook Messenger</option>
+                <option>Telegram</option>
+                <option>Snapchat</option>
+                <option>X</option>
+                <option>อื่นๆ</option>
+            </select>
+            <input id="Contact_Channel2_Other_fake" class="hidden" placeholder="โปรดระบุช่องทางอื่นๆ">
+            ซึ่งผู้จำหน่ายแจ้งว่า <textarea id="Contact_Awnser_fake"></textarea>
+          </label>
+        </div>
+        <!-- ==== จบ Block เพิ่มเติม ==== -->
+
+        <label>
+            <input type="radio" name="PoliceType" value="สถานีตำรวจ" checked onclick="togglePoliceType('station')"> แจ้งความที่สถานีตำรวจ
+            <input type="radio" name="PoliceType" value="ออนไลน์" onclick="togglePoliceType('online')"> แจ้งความออนไลน์
+        </label>
+        <div id="Police_Station_Wrap">
+            ประกอบกับผู้ร้องดำเนินการติดต่อแจ้งความแล้วที่สถานีตำรวจ
+            <span class="radio-wrap">
+                <input type="radio" name="PoliceStationType" value="ภูธร" checked> ภูธร
+                <input type="radio" name="PoliceStationType" value="นครบาล"> นครบาล
+            </span>
+            <input type="text" id="PoliceStation_name" style="width:150px;">
+            จังหวัด <input type="text" id="PoliceStation_province" style="width:100px;">
+            วันที่ <input type="text" id="PoliceStation_date" style="width:100px;">
+            เวลา <input type="text" id="PoliceStation_time" style="width:80px;">
+        </div>
+        <div id="Police_Online_Wrap" class="hidden">
+            ประกอบกับผู้ร้องแจ้งความออนไลน์แล้วผ่าน www.thaipoliceonline.go.th เลขรับแจ้งความออนไลน์ <input type="text" id="PoliceOnline_Number">
+            <input type="radio" name="PoliceOnlineDateType" value="วันที่แจ้งเหตุ" checked> วันที่แจ้งเหตุ
+            <input type="radio" name="PoliceOnlineDateType" value="วันที่นัดหมาย"> วันที่นัดหมาย
+            <input type="text" id="PoliceOnline_date">
+            เวลา <input type="text" id="PoliceOnline_time">
+        </div>
+        <label>
+            จากกรณีดังกล่าวความต้องการของผู้ร้องคือ
+            <span class="radio-wrap">
+                <input type="radio" name="Want" value="ขอเงินคืน" checked> ขอเงินคืน
+                <input type="radio" name="Want" value="ต้องการร้องทุกข์กล่าวโทษเพื่อดำเนินคดี"> ต้องการร้องทุกข์กล่าวโทษเพื่อดำเนินคดี
+            </span>
+        </label>
+        <br>
+        <button type="button" onclick="renderResult2()">แสดงผล</button>
+        <button type="button" onclick="saveDirectPayCase()">บันทึกเคส</button>
+        <a href="index.html"><button type="button" class="back-btn">กลับหน้ารายการเคส</button></a>
+        <a href="deliver2_directpay.html" class="next-btn" target="_blank">ใบนำส่ง ศปอส.ตร.</a>
+        <a href="deliver_SOCOBO_directpay.html" class="next-btn" target="_blank" style="background:#f5a85b;">ใบนำส่ง สคบ.</a>
+        <div id="result" class="result-box" style="display:none;"></div>
+    </form>
+</div>
+<script>
+    // =========== Load เคสจาก index (edit/view) ===========
+    document.addEventListener("DOMContentLoaded", function() {
+        let params = new URLSearchParams(window.location.search);
+        if (params.has("case")) {
+            let caseid = parseInt(params.get("case"));
+            let myCases = JSON.parse(localStorage.getItem("myCases") || "[]");
+            let c = myCases[caseid];
+            if (c && c.data) {
+                Object.entries(c.data).forEach(([k, v])=>{
+                    let el = document.getElementById(k);
+                    if (el) {
+                        if(el.type==="radio") {
+                            let radios = document.querySelectorAll(`[name='${el.name}']`);
+                            radios.forEach(r=>{ if(r.value==v) r.checked=true; });
+                        } else if (el.type==="checkbox") {
+                            el.checked = !!v;
+                        } else {
+                            el.value = v;
+                        }
+                        if(el.onchange) el.onchange();
+                    }
+                });
+                // toggle pattern ให้ถูก
+                if(c.data.FailPattern) toggleFailPattern(c.data.FailPattern);
+                if(c.data.PayTimes) togglePayTimes(c.data.PayTimes==='many');
+                if(c.data.EndBankType) toggleEndBankType(c.data.EndBankType);
+                if(c.data.PoliceType) togglePoliceType(c.data.PoliceType);
+            }
+        }
+    });
+    // =========== END Load ===========
+
+    // show/hide utility
+    function toggleOtherChannel(selectId, inputId) {
+        const sel = document.getElementById(selectId);
+        const inp = document.getElementById(inputId);
+        if(sel.value === "อื่นๆ") inp.classList.remove("hidden");
+        else inp.classList.add("hidden");
+    }
+    function toggleTelBox(id, show) {
+        document.getElementById(id + "_wrap").classList.toggle("hidden", !show);
+    }
+    function togglePreOrder(show) {
+        document.getElementById("PreOrder_wrap").classList.toggle("hidden", !show);
+    }
+    function togglePayTimes(show) {
+        document.getElementById("PayTimes_box").classList.toggle("hidden", !show);
+    }
+    function toggleEndBankType(type) {
+        document.getElementById("EndBank_bank").classList.toggle("hidden", type !== 'bank');
+        document.getElementById("EndBank_promptpay").classList.toggle("hidden", type !== 'promptpay');
+    }
+    function togglePoliceType(type) {
+        document.getElementById("Police_Station_Wrap").classList.toggle("hidden", type !== 'station');
+        document.getElementById("Police_Online_Wrap").classList.toggle("hidden", type !== 'online');
+    }
+    // === toggle fail pattern (แพทเทิ่ล)
+    function toggleFailPattern(pattern) {
+        document.getElementById('failNotMatchBox').classList.toggle('hidden', pattern !== 'notmatch');
+        document.getElementById('failFakeBox').classList.toggle('hidden', pattern !== 'fake');
+    }
+
+    // sync Product_Name to Product_Name2, Product_Name3, Product_Qty2, Product_Fail2
+    document.addEventListener("DOMContentLoaded", function() {
+        let sync = (src, dstArr) => document.getElementById(src)?.addEventListener('input', e=>{
+            dstArr.forEach(id => { let el=document.getElementById(id); if(el) el.value=e.target.value; });
+        });
+        sync('Product_Name', ['Product_Name2','Product_Name3']);
+        sync('Product_Qty', ['Product_Qty2']);
+        sync('Product_Fail', ['Product_Fail2']);
+    });
+
+    // Thai Baht number to text
+    function updateThaiPrice() {
+        let num = parseFloat(document.getElementById('Product_Price').value) || 0;
+        document.getElementById('Product_Price_text').value = num === 0 ? "" : num2thai(num);
+    }
+    function num2thai(num) {
+        const t1=["","หนึ่ง","สอง","สาม","สี่","ห้า","หก","เจ็ด","แปด","เก้า"];
+        const t2=["","สิบ","ร้อย","พัน","หมื่น","แสน","ล้าน"];
+        num=String(Math.floor(num));
+        if(isNaN(num)||num=="")return "";
+        let s="";
+        let n=num.length;
+        for(let i=0;i<n;i++) {
+            let digit=parseInt(num.charAt(i));
+            if(digit!==0){
+                if((i===n-1)&&digit===1&&n>1){s+="เอ็ด";}
+                else if((i===n-2)&&digit===2){s+="ยี่";}
+                else if((i===n-2)&&digit===1){s+="";}
+                else{s+=t1[digit];}
+                s+=t2[n-i-1];
+            }
+        }
+        return s;
+    }
+
+    function saveDirectPayCase() {
+        let data = getFormData();
+        localStorage.setItem("directPayCase", JSON.stringify(data));
+        localStorage.setItem("directPayCase_result", document.getElementById("result").innerText);
+        let allCases = JSON.parse(localStorage.getItem("myCases") || "[]");
+        allCases.push({
+            name: "ชำระเงินโดยตรง",
+            formType: "directpay",
+            data: data,
+            time: Date.now()
+        });
+        localStorage.setItem("myCases", JSON.stringify(allCases));
+        alert("บันทึกเคสเรียบร้อยแล้ว");
+    }
+    function getFormData() {
+        const f = document.forms['directPayForm'];
+        const data = {};
+        Array.from(f.elements).forEach(el=>{
+            if(!el.name && !el.id) return;
+            let key = el.id || el.name;
+            if(el.type==="radio") {
+                if(el.checked) data[key] = el.value;
+            }
+            else if(el.type==="checkbox") {
+                data[key] = el.checked;
+            }
+            else {
+                data[key] = el.value;
+            }
+        });
+        return data;
+    }
+    function safe(val) { return (val && val.trim() !== "") ? val : "…"; }
+    function renderResult2() {
+        const data = getFormData();
+        let failPattern = data.FailPattern || "notmatch";
+        let result = '';
+        // -- ส่วนต้นเหมือนเดิม --
+        result += `ผู้ร้องได้รับสินค้าไม่ตรงตามข้อตกลง (หลอกลวง) เนื่องจากผู้ร้องสั่งซื้อเป็น ${safe(data.Product_Name)} แต่ได้รับสินค้าเป็น ${safe(data.Product_Fail)}\n\n`;
+        result += `ผู้ร้องชื่อ ${safe(data.Complainant_Name)}\n`;
+        result += `หมายเลขโทรศัพท์ ${safe(data.Complainant_Tel)}\n`;
+        result += `หมายเลขบัตรประจำตัวประชาชน ${safe(data.Complainant_ID)}\n`;
+        result += `ที่อยู่ที่สามารถติดต่อได้ ${safe(data.Complainant_Address)}\n`;
+        result += `ที่อยู่ตามบัตรประจำตัวประชาชน ${safe(data.Complainant_AddressID)}\n\n`;
+        result += `ผู้ร้องสั่งซื้อเป็น ${safe(data.Product_Name2)} จำนวน ${safe(data.Product_Qty)} ราคา ${safe(data.Product_Price)} บาท ( ${safe(data.Product_Price_text)} บาทถ้วน)  `;
+        result += `${safe(data.Use_Type) || "เพื่อนำไปใช้เอง/เพื่อจำหน่ายต่อ"}\n`;
+        result += `ผู้ร้องพบเห็นโพสต์จำหน่ายสินค้าผ่านช่องทาง ${safe(data.Seller_Channel)} ชื่อ ${safe(data.Seller_Name)} (URL : ${safe(data.Seller_URL)})`;
+        if (safe(data.Seller_Tel) !== "…") {
+            result += ` หมายเลขโทรศัพท์ผู้จำหน่าย ${safe(data.Seller_Tel)}`;
+        }
+        result += ` เป็นการสั่งซื้อสินค้าแบบ${safe(data.Order_Type)}`;
+        if (data.Order_Type === "Pre-order") result += ` กำหนดส่งสินค้า ${safe(data.PreOrder_Days)} วัน`;
+        result += ` ช่องทางการติดต่อเมื่อเวลาสั่งซื้อผ่าน ${safe(data.Contact_Channel)}`;
+        if (safe(data.Order_Number) !== "…") {
+            result += ` หมายเลขคำสั่งซื้อ${safe(data.Order_Number)} `;
+        } else {
+            result += `/ (ไม่มีรายละเอียดหมายเลขคำสั่งซื้อสำเร็จ) `;
+        }
+        result += `\n\n`;
+        result += `ผู้ร้องทำการสั่งซื้อสินค้าในเขตพื้นที่ ${safe(data.Buying_Address)}\n\n`;
+        if(data.PayTimes === "many") {
+            result += `\nโดยผู้ร้องได้ทำการสั่งซื้อสินค้า และชำระเงินให้กับร้านค้าหลายครั้ง:\n${safe(data.PayTimes_Multi)}\n`;
+        } else {
+            result += `\nโดยผู้ร้องได้ทำการสั่งซื้อสินค้า และชำระเงินให้กับร้านค้าผ่านระบบ Mobile Internet Banking จากบัญชีธนาคาร ${safe(data.StartBank_Name)} หมายเลขบัญชี ${safe(data.StartBank_Number)}  ชื่อบัญชี ${safe(data.StartBank_UserName)} ไปยัง`;
+            if (data.EndBankType === "bank") {
+                result += `บัญชีธนาคาร ${safe(data.EndBank_Name)} หมายเลขบัญชี ${safe(data.EndBank_Number)} ชื่อบัญชี ${safe(data.EndBank_UserName)}`;
+            } else {
+                result += `บัญชีพร้อมเพย์ หมายเลข ${safe(data.EndPromptPay_Number)} ชื่อบัญชี ${safe(data.EndPromptPay_UserName)}`;
+            }
+            result += ` วันที่ ${safe(data.Transfer_Date)} เวลา ${safe(data.Transfer_Time)} น.\n\n`;
+        }
+        result += `หลังจากโอนเงินผู้ร้องแจ้งชื่อ และที่อยู่ในการรับสินค้าเป็นชื่อ ${safe(data.Order_Name)} ที่อยู่ ${safe(data.Order_Address)}`;
+        result += `ผู้จำหน่ายแจ้งว่าจะทำการจัดส่งสินค้าให้ในวันที่ ${safe(data.Confirm_Date)}\n\n`;
+        result += `ต่อมาวันที่${safe(data.Receive_Date)} เวลา ${safe(data.Receive_Time)} น. ผู้ร้องได้รับสินค้า ซึ่งจัดส่งผ่านทางบริษัท ${safe(data.Shipping_Company)} หมายเลขพัสดุ ${safe(data.Parcel_ID)}  ผู้จัดส่งชื่อ ${safe(data.Sender_Name)} หมายเลขโทรศัพท์ผู้จำหน่าย ${safe(data.Sender_Tel)} ที่อยู่ผู้จัดส่ง ${safe(data.Sender_Address)}\n\n`;
+
+        // === เงื่อนไข pattern ===
+        if (failPattern === "notmatch") {
+            result += `หลังจากตรวจสอบสินค้าพบว่าได้รับสินค้าไม่ตรงตามข้อตกลง เนื่องจากผู้ร้องสั่งซื้อเป็น ${safe(data.Product_Name3)}จำนวน${safe(data.Product_Qty2)} แต่ได้รับสินค้าเป็น ${safe(data.Product_Fail2)}จำนวน${safe(data.Product_FailQty)}  \n\n`;
+            result += `ผู้ร้องได้ทำการติดต่อไปยังผู้จำหน่ายอีกครั้ง ติดต่อไปวันที่ ${safe(data.Contact_Date)} ผ่านช่องทาง ${safe(data.Contact_Channel2)} ซึ่งผู้จำหน่ายแจ้งว่า ${safe(data.Contact_Awnser)}\n\n`;
+        } else if (failPattern === "fake") {
+            result += `หลังจากตรวจสอบสินค้าพบว่าได้รับสินค้าผิดกฎหมาย (สินค้าปลอม) เนื่องจากผู้ร้องสั่งซื้อเป็น ${safe(data.Fake_Product_Name)} จำนวน ${safe(data.Fake_Product_Qty)} แต่ได้รับสินค้าเป็น ${safe(data.Fake_Product_Fail)} จำนวน ${safe(data.Fake_Product_FailQty)}\nจุดสังเกตที่พบว่าปลอม: ${safe(data.Fake_Notice)}\n\n`;
+            result += `ผู้ร้องได้ทำการติดต่อไปยังผู้จำหน่ายอีกครั้ง ติดต่อไปวันที่ ${safe(data.Contact_Date_fake)} ผ่านช่องทาง ${safe(data.Contact_Channel2_fake)} ซึ่งผู้จำหน่ายแจ้งว่า ${safe(data.Contact_Awnser_fake)}\n\n`;
+        }
+
+        // == Police แจ้งความ ==
+        if (data.PoliceType === "สถานีตำรวจ") {
+            result += `แจ้งความที่สถานีตำรวจ ประกอบกับผู้ร้องดำเนินการติดต่อแจ้งความแล้วที่สถานีตำรวจ${safe(data.PoliceStationType)} ${safe(data.PoliceStation_name)} จังหวัด ${safe(data.PoliceStation_province)} วันที่ ${safe(data.PoliceStation_date)} เวลา ${safe(data.PoliceStation_time)} น.\n`;
+        }
+        if (data.PoliceType === "ออนไลน์") {
+            result += `แจ้งความออนไลน์ ประกอบกับผู้ร้องแจ้งความออนไลน์แล้วผ่าน www.thaipoliceonline.go.th เลขรับแจ้งความออนไลน์ ${safe(data.PoliceOnline_Number)} วันที่แจ้งเหตุ/วันที่นัดหมาย${safe(data.PoliceOnline_date)} เวลา ${safe(data.PoliceOnline_time)} น.\n`;
+        }
+        result += `\nจากกรณีดังกล่าวความต้องการของผู้ร้องคือ ${safe(data.Want)}\n`;
+        document.getElementById("result").style.display = "block";
+        document.getElementById("result").innerText = result;
+        localStorage.setItem("directPayCase_result", result);
+    }
+
+    // คัดลอก field ต่างๆ
+    function copyAddress() {
+        document.getElementById("Complainant_AddressID").value = document.getElementById("Complainant_Address").value;
+    }
+    function copyAddress2() {
+        document.getElementById("Buying_Address").value = document.getElementById("Complainant_Address").value;
+    }
+    function fillRecieverName() {
+        document.getElementById("Order_Name").value = document.getElementById("Complainant_Name").value;
+    }
+    function fillRecieverAddr() {
+        document.getElementById("Order_Address").value = document.getElementById("Complainant_Address").value;
+    }
+    function copyNameToStartBank() {
+        document.getElementById("StartBank_UserName").value = document.getElementById("Complainant_Name").value;
+    }
+</script>
+</body>
+</html>

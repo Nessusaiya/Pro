@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Document Sorter Tool (Sort by Name/Date)</title>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <style>
+    body { font-family: 'Sarabun', Arial, sans-serif; background: #f5f5f5; padding: 24px;}
+    .section { background: #fff; margin: 20px 0; padding: 18px 14px; border-radius: 8px; box-shadow: 0 2px 8px #eee;}
+    .section label { font-weight: bold; }
+    .file-list {
+      list-style: none; margin: 12px 0 0 0; padding: 0; min-height: 32px;
+      display: flex; flex-wrap: wrap; gap: 18px; min-height: 64px;
+      border: 2.5px dashed #ccc; border-radius: 10px; background: #fafcff;
+      transition: border 0.2s, background 0.2s;
+      position: relative;
+    }
+    .file-list.dragover {
+      border-color: #2977f5 !important;
+      background: #e3f1fe !important;
+    }
+    .placeholder {
+      color: #bbb; font-size: 1.06em; width: 100%; text-align: center; margin: 22px 0;
+      pointer-events: none; user-select: none;
+    }
+    .file-item {
+      margin: 0; padding: 0; border: none; background: none;
+      display: flex; align-items: center; flex-direction: column; position: relative;
+    }
+    .file-preview {
+      width: 140px;
+      height: 198px;
+      object-fit: contain;
+      border-radius: 10px;
+      border: 2.5px solid #bbb;
+      box-shadow: 0 2px 10px #ddd;
+      background: #fff;
+      transition: box-shadow .2s;
+    }
+    .file-icon {
+      font-size: 2.5em; margin-bottom: 8px; color: #aaa; width: 140px; height: 198px;
+      display: flex; align-items: center; justify-content: center; border-radius: 10px; border: 2.5px solid #bbb; background: #fff;
+    }
+    .remove-btn {
+      position: absolute; top: -16px; right: -16px; color: #fff; background: #d23;
+      border-radius: 50%; width: 34px; height: 34px; font-size: 1.35em;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      box-shadow: 0 2px 8px #aaa;
+      border: 2px solid #fff;
+      z-index: 2;
+      transition: background .2s;
+    }
+    .remove-btn:hover { background: #ff5555; }
+    .file-index {
+      margin-top: 10px; font-size: 1.15em; color: #2977f5;
+      font-weight: bold; background: #f7f7ff; border-radius: 8px;
+      padding: 2px 16px; letter-spacing: 2px;
+    }
+    button { background: #2977f5; color: #fff; border: none; padding: 10px 20px;
+      border-radius: 5px; cursor: pointer; font-size: 1em; margin-top: 12px; }
+    .btn-download {
+      background: #39b54a; margin-right: 10px;
+    }
+    .btn-delete { background: #e63737; margin-right: 8px; margin-left: 0; }
+    .btn-sort { background: #3a69c1; margin-right: 6px; margin-top: 12px;}
+    .note { color: #d23; font-size: 0.98em; margin-left: 12px;}
+  </style>
+</head>
+<body>
+  <h2>Document Sorter Tool - เรียงเอกสาร (Sort by Name/Date)</h2>
+  <form id="evidenceForm">
+    <div id="sections"></div>
+    <button type="button" onclick="downloadZipAll()">ดาวน์โหลด ZIP หลักฐานทั้งหมด (Download All)</button>
+  </form>
+  <script>
+    const categories = [
+      { key: 'id_card',    labelTH: '1_ภาพถ่ายบัตรประชาชน',        note: '(ปกปิดศาสนาทุกครั้ง!)' },
+      { key: 'payment',    labelTH: '2_หลักฐานการชำระเงินหรือหน้ากล่อง', note: '(ถ้าหลักฐานมากกว่า 8 รูป ให้รวมเป็นไฟล์ Word ด้วย)' },
+      { key: 'police',     labelTH: '3_หลักฐานการแจ้งความ',           note: '(แบบ SMS ใช้ไม่ได้)' },
+      { key: 'proxy_id',   labelTH: '4_บัตรประชาชนผู้มอบอำนาจ',      note: '(ถ้ามี)' },
+      { key: 'proxy_doc',  labelTH: '5_หลักฐานใบมอบอำนาจ',           note: '(ถ้ามี)' },
+      { key: 'profile',    labelTH: '6_หลักฐานโปรไฟล์ร้านค้า',        note: '' },
+      { key: 'post',       labelTH: '7_หลักฐานการโพสต์จำหน่ายสินค้า', note: '' },
+      { key: 'chat',       labelTH: '8_หลักฐานการสนทนา',              note: '(เรียงลำดับเหตุการณ์)' },
+      { key: 'parcel',     labelTH: '9_หน้าซองหน้ากล่อง-สินค้าที่ได้รับ',note: '(ถ้ามี)' },
+      { key: 'other',      labelTH: '10_หลักฐานอื่นๆ',                 note: '(ถ้ามี)' },
+    ];
+
+    // {key: [ {file, dataUrl}, ... ]}
+    const filesByCategory = {};
+    categories.forEach(cat => filesByCategory[cat.key] = []);
+
+    const sectionsDiv = document.getElementById('sections');
+    categories.forEach(cat => {
+      const section = document.createElement('div');
+      section.className = 'section';
+      section.innerHTML = `
+        <label>${cat.labelTH.replace(/_/g, ' ')} <span class="note">${cat.note}</span></label><br>
+        <input type="file" multiple onchange="addFiles(event,'${cat.key}')">
+        <ul class="file-list" id="list-${cat.key}">
+          <li class="placeholder">ลากไฟล์มาวางที่นี่ หรือกด Choose File</li>
+        </ul>
+        <button class="btn-download" type="button" onclick="downloadCategory('${cat.key}')">ดาวน์โหลดเฉพาะหมวดนี้</button>
+        <button class="btn-delete" type="button" onclick="deleteAllInCategory('${cat.key}')">ลบทั้งหมดในหมวด</button>
+        <button class="btn-sort" type="button" onclick="sortByName('${cat.key}')">เรียงตามชื่อไฟล์</button>
+        <button class="btn-sort" type="button" onclick="sortByDate('${cat.key}')">เรียงตามวันที่เพิ่ม</button>
+      `;
+      sectionsDiv.appendChild(section);
+    });
+
+    // เพิ่มไฟล์เข้าแต่ละหมวด
+    window.addFiles = (e, key) => {
+      const files = Array.from(e.target.files);
+      files.forEach(file=>{
+        if(file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = ev=>{
+            filesByCategory[key].push({file, dataUrl: ev.target.result});
+            renderFileList(key);
+          };
+          reader.readAsDataURL(file);
+        } else {
+          filesByCategory[key].push({file, dataUrl: null});
+          renderFileList(key);
+        }
+      });
+      e.target.value = '';
+    };
+
+    function removeFile(key, idx) {
+      filesByCategory[key].splice(idx, 1);
+      renderFileList(key);
+    }
+
+    function deleteAllInCategory(catKey) {
+      if(confirm('คุณต้องการลบไฟล์ทั้งหมดในหมวดนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้!')) {
+        filesByCategory[catKey] = [];
+        renderFileList(catKey);
+      }
+    }
+
+    function isImage(obj) {
+      return obj.file.type.startsWith('image/');
+    }
+
+    function renderFileList(key) {
+      const ul = document.getElementById(`list-${key}`);
+      ul.innerHTML = '';
+      if (filesByCategory[key].length === 0) {
+        ul.innerHTML = '<li class="placeholder">ลากไฟล์มาวางที่นี่ หรือกด Choose File</li>';
+      }
+      filesByCategory[key].forEach((fObj, i) => {
+        const li = document.createElement('li');
+        li.className = 'file-item';
+        if (isImage(fObj) && fObj.dataUrl) {
+          const img = document.createElement('img');
+          img.className = 'file-preview';
+          img.src = fObj.dataUrl;
+          img.title = fObj.file.name;
+          li.appendChild(img);
+        } else {
+          const icon = document.createElement('span');
+          icon.className = 'file-icon';
+          if (fObj.file.type.includes('pdf')) icon.innerHTML = '📄';
+          else if (fObj.file.type.includes('word')) icon.innerHTML = '📝';
+          else icon.innerHTML = '📁';
+          li.appendChild(icon);
+        }
+        const idx = document.createElement('div');
+        idx.className = 'file-index';
+        idx.textContent = i + 1;
+        li.appendChild(idx);
+
+        const remove = document.createElement('span');
+        remove.className = 'remove-btn';
+        remove.innerHTML = '&#10005;';
+        remove.onclick = () => removeFile(key, i);
+        li.appendChild(remove);
+
+        ul.appendChild(li);
+      });
+    }
+
+    // Drag & Drop cross-category and reorder within category
+    const groupName = "evidence-list-group";
+    categories.forEach(cat => {
+      const ul = document.getElementById(`list-${cat.key}`);
+      new Sortable(ul, {
+        group: groupName,
+        animation: 120,
+        onEnd: evt => {
+          const fromCatKey = evt.from.id.replace('list-', '');
+          const toCatKey = evt.to.id.replace('list-', '');
+          // ข้ามหมวด
+          if (evt.from !== evt.to) {
+            const itemsFrom = filesByCategory[fromCatKey];
+            const [moved] = itemsFrom.splice(evt.oldIndex, 1);
+            filesByCategory[toCatKey].splice(evt.newIndex, 0, moved);
+            renderFileList(fromCatKey);
+            renderFileList(toCatKey);
+          } else {
+            // ในหมวดเดียวกัน
+            const items = filesByCategory[fromCatKey];
+            const [removed] = items.splice(evt.oldIndex, 1);
+            items.splice(evt.newIndex, 0, removed);
+            renderFileList(fromCatKey);
+          }
+        }
+      });
+      // Drag & Drop upload
+      ul.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        ul.classList.add("dragover");
+      });
+      ul.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        ul.classList.remove("dragover");
+      });
+      ul.addEventListener('drop', (e) => {
+        e.preventDefault();
+        ul.classList.remove("dragover");
+        const dt = e.dataTransfer;
+        const files = Array.from(dt.files);
+        files.forEach(file=>{
+          if(file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = ev=>{
+              filesByCategory[cat.key].push({file, dataUrl: ev.target.result});
+              renderFileList(cat.key);
+            };
+            reader.readAsDataURL(file);
+          } else {
+            filesByCategory[cat.key].push({file, dataUrl: null});
+            renderFileList(cat.key);
+          }
+        });
+      });
+    });
+
+    // ฟังก์ชัน sort
+    function sortByName(catKey) {
+      filesByCategory[catKey].sort((a, b) =>
+        a.file.name.localeCompare(b.file.name, undefined, {numeric: true, sensitivity: 'base'})
+      );
+      renderFileList(catKey);
+    }
+
+    function sortByDate(catKey) {
+      filesByCategory[catKey].sort((a, b) => {
+        return (a.file.lastModified || 0) - (b.file.lastModified || 0);
+      });
+      renderFileList(catKey);
+    }
+
+    // ดาวน์โหลด zip
+    async function downloadCategory(catKey) {
+      const cat = categories.find(c => c.key === catKey);
+      const arr = filesByCategory[cat.key];
+      if (arr.length === 0) {
+        alert('ไม่มีไฟล์ในหมวดนี้');
+        return;
+      }
+      const zip = new JSZip();
+      let nameSet = new Set();
+      for (let i = 0; i < arr.length; i++) {
+        const f = arr[i].file;
+        let ext = f.name.split('.').pop();
+        let newName = `${cat.labelTH}_${i+1}.${ext}`.replace(/[^\wก-๙0-9.-]/g,"_");
+        let counter = 2;
+        while(nameSet.has(newName)) {
+          newName = `${cat.labelTH}_${i+1}_${counter}.${ext}`.replace(/[^\wก-๙0-9.-]/g,"_");
+          counter++;
+        }
+        nameSet.add(newName);
+        const data = await f.arrayBuffer();
+        zip.file(newName, data);
+      }
+      const content = await zip.generateAsync({type:"blob"});
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(content);
+      link.download = `หลักฐาน_${cat.labelTH}.zip`;
+      link.click();
+    }
+
+    async function downloadZipAll() {
+      const zip = new JSZip();
+      let nameSet = new Set();
+      for (const cat of categories) {
+        const arr = filesByCategory[cat.key];
+        if (arr.length === 0) continue;
+        for (let i = 0; i < arr.length; i++) {
+          const f = arr[i].file;
+          let ext = f.name.split('.').pop();
+          let newName = `${cat.labelTH}_${i+1}.${ext}`.replace(/[^\wก-๙0-9.-]/g,"_");
+          let counter = 2;
+          while(nameSet.has(newName)) {
+            newName = `${cat.labelTH}_${i+1}_${counter}.${ext}`.replace(/[^\wก-๙0-9.-]/g,"_");
+            counter++;
+          }
+          nameSet.add(newName);
+          const data = await f.arrayBuffer();
+          zip.file(newName, data);
+        }
+      }
+      const content = await zip.generateAsync({type:"blob"});
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(content);
+      link.download = "หลักฐานร้องเรียน.zip";
+      link.click();
+    }
+
+    // ยืนยันก่อนออกถ้ามีไฟล์
+    window.onbeforeunload = function() {
+      for (const cat of categories) {
+        if (filesByCategory[cat.key] && filesByCategory[cat.key].length) {
+          return "คุณยังไม่ได้ดาวน์โหลดไฟล์หลักฐาน หรือบันทึกข้อมูล หากออกจากหน้านี้ ไฟล์ทั้งหมดจะหาย ต้องการออกจากหน้าหรือไม่?";
+        }
+      }
+      return undefined;
+    };
+  </script>
+</body>
+</html>

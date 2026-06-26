@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการเอกสารร้องเรียน 1212 ETDA</title>
+    <style>
+        :root {
+            --red-bg: #fff5f5;
+            --red-border: #ffc9c9;
+            --red-header: #c92a2a;
+            --green-bg: #f0fff4;
+            --green-border: #b2f2bb;
+            --green-header: #2b8a3e;
+            --text-main: #333;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: var(--text-main);
+        }
+
+        /* Tabs Navigation */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 16px;
+            font-weight: bold;
+            color: #666;
+            transition: 0.3s;
+        }
+
+        .tab-btn.active {
+            border-bottom: 4px solid;
+        }
+
+        .tab-btn.active.red-tab {
+            color: var(--red-header);
+            border-color: var(--red-header);
+        }
+
+        .tab-btn.active.green-tab {
+            color: var(--green-header);
+            border-color: var(--green-header);
+        }
+
+        /* Page Content */
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+
+        /* Layout Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 15px;
+            grid-template-areas: 
+                "top top"
+                "left right";
+        }
+
+        .box {
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .box-top { grid-area: top; }
+        .box-left { grid-area: left; }
+        .box-right { grid-area: right; }
+
+        /* Themes */
+        .theme-red .box {
+            background-color: var(--red-bg);
+            border-color: var(--red-border);
+        }
+        .theme-red h3 { color: var(--red-header); }
+
+        .theme-green .box {
+            background-color: var(--green-bg);
+            border-color: var(--green-border);
+        }
+        .theme-green h3 { color: var(--green-header); }
+
+        /* Form Elements */
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .checkbox-group label { font-weight: normal; display: inline; }
+        .checkbox-item { margin-bottom: 8px; display: flex; align-items: flex-start; }
+        .checkbox-item input { margin-top: 4px; margin-right: 8px; }
+        
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .warning-text {
+            color: #d63384;
+            font-size: 0.9em;
+            font-style: italic;
+        }
+
+        .btn-group {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            color: white;
+            transition: all 0.2s ease;
+        }
+
+        .btn-generate { background-color: #007bff; }
+        .btn-reset { background-color: #6c757d; }
+        
+        /* ปุ่ม Copy สไตล์ใหม่ */
+        .btn-copy { 
+            background-color: #28a745; 
+            margin-top: 10px; 
+            width: 100%;
+        }
+        .btn-copy.copied {
+            background-color: #155724 !important;
+        }
+        
+        button:hover { opacity: 0.9; }
+
+        /* Template Selector */
+        .template-selector {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 4px;
+        }
+        
+        .template-display {
+            display: none;
+        }
+        .template-display.active {
+            display: block;
+        }
+
+        textarea {
+            width: 100%;
+            height: 250px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: 'Sarabun', sans-serif;
+            resize: vertical;
+        }
+
+        .hidden { display: none; }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                grid-template-areas: 
+                    "top"
+                    "left"
+                    "right";
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="tabs">
+        <button class="tab-btn active red-tab" onclick="openPage('page1', this)">เพจ 1: เอกสารไม่ครบ</button>
+        <button class="tab-btn green-tab" onclick="openPage('page2', this)">เพจ 2: เอกสารครบถ้วน</button>
+    </div>
+
+    <div id="page1" class="page active theme-red">
+        <div class="main-grid">
+            
+            <div class="box box-top">
+                <h3>1. ใส่ข้อมูล (เอกสารไม่ครบ)</h3>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <label>ชื่อผู้ร้อง</label>
+                        <input type="text" id="p1_name" placeholder="ระบุชื่อผู้ร้อง">
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <label>เลขรับเรื่อง</label>
+                        <input type="text" id="p1_case_id" placeholder="ระบุเลขรับเรื่อง">
+                    </div>
+                    <div style="flex: 1; min-width: 120px;">
+                        <label>ครั้งที่ (ตัวเลข)</label>
+                        <input type="number" id="p1_followup_count" placeholder="ใส่ตัวเลข">
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <label>ช่องทางติดต่อ (CRM)</label>
+                        <select id="p1_contact_type">
+                            <option value="Line" selected>Line</option>
+                            <option value="Facebook">Facebook</option>
+                            <option value="Email">Email</option>
+                        </select>
+                    </div>
+                </div>
+
+                <hr>
+                <label>ติ๊กเลือกเอกสารที่ขาด:</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item" style="border-bottom: 1px dashed #ffa8a8; padding-bottom: 8px; margin-bottom: 8px;">
+                        <input type="checkbox" id="p1_select_all" onchange="toggleAllP1(this)"> 
+                        <label for="p1_select_all" style="font-weight:bold; cursor:pointer; color:#c92a2a;">เลือกทั้งหมด</label>
+                    </div>
+
+                    <div class="checkbox-item"><input type="checkbox" value="หลักฐานการสนทนาระหว่างผู้ซื้อและผู้จำหน่าย โดยผู้ร้องจะต้องทำการบันทึกหน้าจอของการสนทนาตั้งแต่มี การติดต่อการซื้อ-ขาย จนถึงการติดตามเรื่อง พร้อมทั้งเรียงลำดับ และระบุหมายเลขกำกับไว้ในแต่ละภาพ"> <label>1. หลักฐานการสนทนาระหว่างผู้ซื้อและผู้จำหน่าย</label></div>
+                    <div class="checkbox-item"><input type="checkbox" value="สำเนาบัตรประจำตัวประชาชนของผู้ร้อง"> <label>2. สำเนาบัตรประจำตัวประชาชนของผู้ร้อง</label></div>
+                    <div class="checkbox-item"><input type="checkbox" value="หลักฐานการชำระเงิน"> <label>3. หลักฐานการชำระเงิน</label></div>
+                    <div class="checkbox-item"><input type="checkbox" value="หลักฐานการแจ้งความ ซึ่งท่านสามารถแจ้งความผ่านช่องทางออนไลน์ได้ที่ www.thaipoliceonline.go.th (กรณีที่ผู้ร้องดำเนินการแจ้งความออนไลน์ สามารถแคปรูปหน้าจอที่มีเลขแจ้งความ, ชื่อสถานีตำรวจ และวันและเวลานัดหมายหรือวันและเวลาการแจ้งความ เพื่อใช้เป็นเอกสารหลักฐานได้ค่ะ)"> <label>4. หลักฐานการแจ้งความ</label></div>
+                    <div class="checkbox-item"><input type="checkbox" value="ช่องทางการติดต่อผู้ขาย URL หรือ ID ร้านค้า"> <label>5. ช่องทางการติดต่อผู้ขาย URL หรือ ID ร้านค้า</label></div>
+                    <div class="checkbox-item"><input type="checkbox" value="หลักฐานการโพสต์จำหน่ายสินค้า"> <label>6. หลักฐานการโพสต์จำหน่ายสินค้า</label></div>
+                    <div class="checkbox-item"><input type="checkbox" value="ภาพถ่ายสินค้าที่ได้รับ"> <label>7. ภาพถ่ายสินค้าที่ได้รับ</label></div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" value="ภาพถ่ายหน้ากล่อง หรือหน้าถุงพัสดุที่มีการนำมาส่ง (หากชำระปลายทางเป็นเงินสดให้กับพนักงานขนส่ง รบกวนผู้ร้องเขียนกำกับราคาสินค้าบริเวณหน้ากล่องพัสดุ)"> 
+                        <label>8. ภาพถ่ายหน้ากล่อง (ชำระปลายทาง) <span class="warning-text">*กรณีชำระปลายทาง*</span></label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" value="ภาพถ่ายหน้ากล่อง หรือหน้าถุงพัสดุที่มีการนำมาส่ง (กรณีหน้าพัสดุสูญหาย หรือชำรุดเสียหาย เจ้าหน้าที่รบกวนผู้ร้องดำเนินการแจ้งความกับทางเจ้าหน้าที่ตำรวจ เพื่อเป็นหลักฐานในการร้องเรียนกรณีดังกล่าวค่ะ)"> 
+                        <label>9. ภาพถ่ายหน้ากล่อง (สูญหาย/ชำรุด) <span class="warning-text">*กรณีชำระให้กับร้านค้าโดยตรง*</span></label>
+                    </div>
+                    <div class="checkbox-item"><input type="checkbox" value="เลขที่บัญชีผู้ร้อง"> <label>10. เลขที่บัญชีผู้ร้อง</label></div>
+                    <div class="checkbox-item"><input type="checkbox" value="เลขที่บัญชีร้านค้า"> <label>11. เลขที่บัญชีร้านค้า</label></div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-generate" onclick="generatePage1()">ใส่ข้อมูล</button>
+                    <button class="btn-reset" onclick="resetPage1()">รีเซ็ตข้อมูล</button>
+                </div>
+            </div>
+
+            <div class="box box-left">
+                <h3>2. แจ้งผู้ร้อง</h3>
+                <div class="template-selector">
+                    <label style="display:inline; margin-right:15px;"><input type="radio" name="p1_template_type" value="chat" checked onchange="toggleTemplateP1()"> ตอบแชท</label>
+                    <label style="display:inline;"><input type="radio" name="p1_template_type" value="email" onchange="toggleTemplateP1()"> ตอบ Email</label>
+                </div>
+
+                <div id="p1_chat_area" class="template-display active">
+                    <textarea id="p1_chat_output" readonly></textarea>
+                    <button class="btn-copy" onclick="copyText('p1_chat_output', this)">คัดลอกข้อความ (แชท)</button>
+                </div>
+
+                <div id="p1_email_area" class="template-display">
+                    <textarea id="p1_email_output" readonly></textarea>
+                    <button class="btn-copy" onclick="copyText('p1_email_output', this)">คัดลอกข้อความ (Email)</button>
+                </div>
+            </div>
+
+            <div class="box box-right">
+                <h3>3. ลง CRM</h3>
+                <textarea id="p1_crm_output" readonly></textarea>
+                <button class="btn-copy" onclick="copyText('p1_crm_output', this)">คัดลอกข้อความ (CRM)</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="page2" class="page theme-green">
+        <div class="main-grid">
+            <div class="box box-top">
+                <h3>1. ใส่ข้อมูล (เอกสารครบถ้วน)</h3>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <label>ชื่อผู้ร้อง</label>
+                        <input type="text" id="p2_name" placeholder="ระบุชื่อผู้ร้อง">
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <label>เลขรับเรื่อง</label>
+                        <input type="text" id="p2_case_id" placeholder="ระบุเลขรับเรื่อง">
+                    </div>
+                </div>
+                
+                <label>Category</label>
+                <select id="p2_category" onchange="checkCategoryOther()">
+                    <option value="ปัญหาซื้อขายออนไลน์ (ไม่ได้รับสินค้า (หลอกลวง))">ปัญหาซื้อขายออนไลน์ (ไม่ได้รับสินค้า (หลอกลวง))</option>
+                    <option value="ปัญหาซื้อขายออนไลน์ (ได้รับสินค้าไม่ตรงตามข้อตกลง)">ปัญหาซื้อขายออนไลน์ (ได้รับสินค้าไม่ตรงตามข้อตกลง)</option>
+                    <option value="ปัญหาซื้อขายออนไลน์ (การหลอกลวงส่งสินค้าพัสดุปลายทางโดยไม่มีการสั่งซื้อ)">ปัญหาซื้อขายออนไลน์ (การหลอกลวงส่งสินค้าพัสดุปลายทางโดยไม่มีการสั่งซื้อ)</option>
+                    <option value="ปัญหาซื้อขายออนไลน์ (ได้รับสินค้าชำรุดแตกหัก)">ปัญหาซื้อขายออนไลน์ (ได้รับสินค้าชำรุดแตกหัก)</option>
+                    <option value="ปัญหาซื้อขายออนไลน์ (ได้รับสินค้าผิดกฎหมาย)">ปัญหาซื้อขายออนไลน์ (ได้รับสินค้าผิดกฎหมาย)</option>
+                    <option value="other">อื่นๆ</option>
+                </select>
+                <input type="text" id="p2_category_other" class="hidden" placeholder="ระบุประเภทอื่นๆ">
+
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <div style="flex: 1;">
+                        <label>ช่องทางการติดต่อ</label>
+                        <select id="p2_contact_type">
+                            <option value="Line">Line</option>
+                            <option value="Facebook">Facebook</option>
+                            <option value="Email">Email</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>ชื่อช่องทางการติดต่อ</label>
+                        <input type="text" id="p2_contact_detail" placeholder="ระบุชื่อช่องทางการติดต่อ">
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-generate" onclick="generatePage2()">ใส่ข้อมูล</button>
+                    <button class="btn-reset" onclick="resetPage2()">รีเซ็ตข้อมูล</button>
+                </div>
+            </div>
+
+            <div class="box box-left">
+                <h3>2. แจ้งผู้ร้อง</h3>
+                <div class="template-selector">
+                    <label style="display:inline; margin-right:15px;"><input type="radio" name="p2_template_type" value="chat" checked onchange="toggleTemplateP2()"> ตอบแชท</label>
+                    <label style="display:inline;"><input type="radio" name="p2_template_type" value="email" onchange="toggleTemplateP2()"> ตอบ Email</label>
+                </div>
+
+                <div id="p2_chat_area" class="template-display active">
+                    <textarea id="p2_chat_output" readonly></textarea>
+                    <button class="btn-copy" onclick="copyText('p2_chat_output', this)">คัดลอกข้อความ (แชท)</button>
+                </div>
+
+                <div id="p2_email_area" class="template-display">
+                    <textarea id="p2_email_output" readonly></textarea>
+                    <button class="btn-copy" onclick="copyText('p2_email_output', this)">คัดลอกข้อความ (Email)</button>
+                </div>
+            </div>
+
+            <div class="box box-right">
+                <h3>3. แจ้งกลุ่ม Line</h3>
+                <textarea id="p2_line_output" readonly></textarea>
+                <button class="btn-copy" onclick="copyText('p2_line_output', this)">คัดลอกข้อความ (แจ้งกลุ่ม Line)</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- ระบบสลับหน้า ---
+        function openPage(pageName, elmnt) {
+            document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+            document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+            document.getElementById(pageName).classList.add("active");
+            elmnt.classList.add("active");
+        }
+
+        // --- ระบบ Copy แบบใหม่ ---
+        function copyText(elementId, btn) {
+            var copyText = document.getElementById(elementId);
+            if (!copyText.value) return;
+            
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value).then(() => {
+                const originalText = btn.innerText;
+                btn.innerText = "✅ คัดลอกสำเร็จ!";
+                btn.classList.add('copied');
+                
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // --- Logic เพจ 1 ---
+        
+        // ฟังก์ชัน เลือกทั้งหมด (ใหม่)
+        function toggleAllP1(source) {
+            const checkboxes = document.querySelectorAll('#page1 .checkbox-group input[type="checkbox"]:not(#p1_select_all)');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+        }
+
+        function cleanName(name) {
+            return name.replace(/^(นาย|นางสาว|นาง|คุณ)/g, '').trim();
+        }
+
+        function toggleTemplateP1() {
+            const type = document.querySelector('input[name="p1_template_type"]:checked').value;
+            document.getElementById('p1_chat_area').classList.toggle('active', type === 'chat');
+            document.getElementById('p1_email_area').classList.toggle('active', type === 'email');
+        }
+
+        function generatePage1() {
+            const rawName = document.getElementById('p1_name').value;
+            const clean = cleanName(rawName);
+            const caseId = document.getElementById('p1_case_id').value;
+            const count = document.getElementById('p1_followup_count').value;
+            const contactType = document.getElementById('p1_contact_type').value;
+
+            let list = "";
+            let i = 1;
+            // ดึงเฉพาะ checkbox ที่ถูกติ๊ก และไม่ใช่ปุ่ม Select All
+            document.querySelectorAll('#page1 .checkbox-group input[type="checkbox"]:checked:not(#p1_select_all)').forEach(cb => {
+                list += `${i}. ${cb.value}\n`;
+                i++;
+            });
+
+            const chatText = `สวัสดีค่ะ คุณ${clean} ทางศูนย์ฯ ได้รับเรื่องร้องเรียนตามเลขรับเรื่อง ${caseId} พร้อมหลักฐานเรียบร้อยแล้วค่ะ ซึ่งจากการตรวจสอบของเจ้าหน้าที่พบว่ายังคงขาดเอกสารหลักฐานเพิ่มเติมดังต่อไปนี้\n\n${list}\nอย่างไรแล้วเจ้าหน้าที่รบกวนผู้ร้องจัดส่งเอกสาร (เพิ่มเติม) ข้างต้นมายังศูนย์ฯ อีกครั้ง เพื่อดำเนินการประสานงานกับทางหน่วยงานต่อไปค่ะ หากท่านมีข้อสงสัยเพิ่มเติมสามารถติดต่อหมายเลขสายด่วน 1212 ได้ตลอด 24 ชั่วโมงค่ะ`;
+            
+            const emailText = `เรียน ท่านผู้ร้องเรียน\n\nทางศูนย์ฯ ได้รับเรื่องร้องเรียนตามเลขรับเรื่อง ${caseId} พร้อมหลักฐานเรียบร้อยแล้วค่ะ ซึ่งจากการตรวจสอบของเจ้าหน้าที่พบว่ายังคงขาดเอกสารหลักฐานเพิ่มเติมดังต่อไปนี้\n\n${list}\nอย่างไรแล้วเจ้าหน้าที่รบกวนผู้ร้องจัดส่งเอกสาร(เพิ่มเติม) ข้างต้นมายังศูนย์ฯ อีกครั้ง เพื่อดำเนินการประสานงานกับทางหน่วยงานต่อไปค่ะ หากท่านมีข้อสงสัยเพิ่มเติมสามารถติดต่อหมายเลขสายด่วน 1212 ได้ตลอด 24 ชั่วโมงค่ะ\n\nขอแสดงความนับถือ\nศูนย์ช่วยเหลือและจัดการปัญหาออนไลน์ 1212 ETDA`;
+            
+            const crmText = `ติดต่อกลับผู้ร้อง ${caseId} (ครั้งที่ ${count}) ตอบกลับ ${contactType} จากการตรวจสอบหลักฐานขาดดังนี้\n\n${list}\nผู้ร้องรับทราบ`;
+
+            document.getElementById('p1_chat_output').value = chatText;
+            document.getElementById('p1_email_output').value = emailText;
+            document.getElementById('p1_crm_output').value = crmText;
+        }
+
+        function resetPage1() {
+            document.getElementById('p1_name').value = "";
+            document.getElementById('p1_case_id').value = "";
+            document.getElementById('p1_followup_count').value = "";
+            document.getElementById('p1_contact_type').value = "Line";
+            
+            // ยกเลิกติ๊กทั้งหมด รวมถึง Select All
+            document.querySelectorAll('#page1 input[type="checkbox"]').forEach(cb => cb.checked = false);
+            
+            document.getElementById('p1_chat_output').value = "";
+            document.getElementById('p1_email_output').value = "";
+            document.getElementById('p1_crm_output').value = "";
+        }
+
+        // --- Logic เพจ 2 ---
+        function checkCategoryOther() {
+            const cat = document.getElementById('p2_category').value;
+            document.getElementById('p2_category_other').classList.toggle('hidden', cat !== 'other');
+        }
+
+        function toggleTemplateP2() {
+            const type = document.querySelector('input[name="p2_template_type"]:checked').value;
+            document.getElementById('p2_chat_area').classList.toggle('active', type === 'chat');
+            document.getElementById('p2_email_area').classList.toggle('active', type === 'email');
+        }
+
+        function generatePage2() {
+            const rawName = document.getElementById('p2_name').value;
+            const clean = cleanName(rawName);
+            const caseId = document.getElementById('p2_case_id').value;
+            let cat = document.getElementById('p2_category').value;
+            if(cat === 'other') cat = document.getElementById('p2_category_other').value;
+            const cType = document.getElementById('p2_contact_type').value;
+            const cDetail = document.getElementById('p2_contact_detail').value;
+
+            const chatText = `สวัสดีค่ะ คุณ${clean} ขณะนี้เลขรับเรื่อง ${caseId} ของท่านอยู่ระหว่างการดำเนินการและประสานงานไปยังหน่วยงานที่เกี่ยวข้อง หากท่านมีข้อสงสัยเพิ่มเติม สามารถติดต่อหมายเลขสายด่วน 1212 ได้ตลอด 24 ชั่วโมงค่ะ`;
+            
+            const emailText = `เรียน ท่านผู้ร้องเรียน\n\nขอบคุณสำหรับข้อมูลค่ะ โดยหมายเลขรับเรื่องของท่าน คือ ${caseId} ของท่านอยู่ระหว่างการดำเนินการและประสานงานไปยังหน่วยงานที่เกี่ยวข้อง หากท่านมีข้อสงสัยเพิ่มเติม สามารถติดต่อหมายเลขสายด่วน 1212 ได้ตลอด 24 ชั่วโมงค่ะ\n\nขอแสดงความนับถือ\nศูนย์ช่วยเหลือและจัดการปัญหาออนไลน์ 1212 ETDA`;
+            
+            const lineText = `ผู้ร้องทำการส่งเอกสารเข้ามาครบถ้วนแล้ว รบกวน CC ปรับปรุง Time Line และจัดทำใบนำส่งหน่วยงานด้วยครับ\n\nอ้างอิง ${caseId}\n${cat}\nชื่อผู้ร้อง : ${rawName}\nช่องทางการติดต่อ : ${cType}\nชื่อช่องทางการติดต่อ : ${cDetail}`;
+
+            document.getElementById('p2_chat_output').value = chatText;
+            document.getElementById('p2_email_output').value = emailText;
+            document.getElementById('p2_line_output').value = lineText;
+        }
+
+        function resetPage2() {
+            document.getElementById('p2_name').value = "";
+            document.getElementById('p2_case_id').value = "";
+            document.getElementById('p2_category').selectedIndex = 0;
+            document.getElementById('p2_category_other').value = "";
+            document.getElementById('p2_contact_detail').value = "";
+            document.getElementById('p2_chat_output').value = "";
+            document.getElementById('p2_email_output').value = "";
+            document.getElementById('p2_line_output').value = "";
+            checkCategoryOther();
+        }
+    </script>
+</body>
+</html>

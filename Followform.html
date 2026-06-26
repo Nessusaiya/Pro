@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>ฟอร์มติดตามผล</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: 'Sarabun', sans-serif; background:#f7fafc; margin:0; }
+    .container { max-width:1200px; margin:40px auto; display:flex; gap:24px; padding:0 16px; }
+    .form-box { background:#fff; border-radius:16px; box-shadow:0 8px 30px #0001; padding:32px 36px 24px; flex:1 1 320px; min-width:340px; }
+    .output-box { background:#fff; border-radius:16px; box-shadow:0 8px 30px #0001; padding:32px; flex:2 2 600px; min-width:400px; display:flex; gap:24px; }
+    h2, .red-highlight { color:#c0392b; margin:0 0 18px; font-weight:700; font-size:1.2em; }
+    label, .field-label { display:block; font-size:1em; margin-top:14px; }
+    input, select, button { margin-top:5px; font-size:1em; padding:6px 10px; border-radius:7px; border:1px solid #bbb; background:#fff; }
+    input[type="text"], input[type="date"] { width:99%; }
+    .radio-group { display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+    .two-cols { display:flex; gap:24px; width:100%; }
+    .output-col { flex:1 1 45%; border-right:1px dashed #aaa; padding-right:18px; }
+    .output-col:last-child { border-right:none; padding-right:0; padding-left:18px; }
+    .output-pre { font-family:inherit; background:#f8f8f8; padding:12px 18px; border-radius:10px; font-size:1.05em; margin:10px 0 20px; white-space:pre-wrap; line-height:1.75; }
+    .btn-primary { margin-top:20px; background:#c0392b; color:#fff; border:none; font-size:1.08em; font-weight:700; padding:12px 36px; border-radius:8px; cursor:pointer; }
+    .btn-reset { margin-top:20px; margin-left:12px; background:#eee; color:#c0392b; border:1px solid #c0392b; font-size:1.08em; font-weight:700; padding:12px 36px; border-radius:8px; cursor:pointer; }
+    .btn-inline { display:inline-block; margin-left:6px; padding:4px 12px; font-size:.95em; }
+    .btn-copy-section { background:#f3ecec; color:#c0392b; border:1px solid #c0392b; font-size:.95em; font-weight:500; padding:3px 14px; border-radius:7px; margin:0 6px 7px 0; cursor:pointer; transition:background .12s; vertical-align:middle; }
+    .btn-copy-section:disabled { color:#888; border-color:#aaa; background:#eaeaea; cursor:default; }
+    .hidden { display:none; }
+    @media (max-width:900px){ .container, .output-box, .two-cols { flex-direction:column; } .output-col, .output-col:last-child { border:none; padding:0; } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <form id="trackForm" class="form-box" autocomplete="off" onsubmit="return false;">
+      <h2 class="red-highlight">ฟอร์มติดตามผล</h2>
+
+      <label>1.ชื่อ - นามสกุลผู้ร้อง
+        <input type="text" id="Cus_Name" />
+      </label>
+
+      <label>2.หมายเลขโทรศัพท์
+        <input type="text" id="Cus_Tel" />
+      </label>
+
+      <label>3.เลข WO
+        <input type="text" id="Cus_WO" placeholder="เช่น WO123456 หรือ 123456" />
+      </label>
+
+      <label>4.วันที่
+        <input type="text" id="Cus_Date" readonly />
+        <button class="btn-inline" type="button" onclick="setToday('Cus_Date')">เลือกวันปัจจุบัน</button>
+      </label>
+
+      <label>5.เวลา
+        <input type="text" id="Cus_Time" readonly />
+        <button class="btn-inline" type="button" onclick="setNow('Cus_Time')">เลือกเวลาปัจจุบัน</button>
+      </label>
+
+      <label>6.เลือกหน่วยงาน
+        <select id="Cus_Type" onchange="toggleOCPB()">
+          <option value="">-- เลือก --</option>
+          <option value="สำนักป้องกันและปราบปรามการกระทำความผิดทางเทคโนโลยีสารสนเทศ (ปท.)">
+            สำนักป้องกันและปราบปรามการกระทำความผิดทางเทคโนโลยีสารสนเทศ (ปท.)
+          </option>
+          <option value="สำนักงานคณะกรรมการคุ้มครองผู้บริโภค (สคบ.)">
+            สำนักงานคณะกรรมการคุ้มครองผู้บริโภค (สคบ.)
+          </option>
+          <option value="ศูนย์ปราบปรามอาชญากรรมทางเทคโนโลยีสารสนเทศ (ศปอส.ตร)">
+            ศูนย์ปราบปรามอาชญากรรมทางเทคโนโลยีสารสนเทศ (ศปอส.ตร)
+          </option>
+          <option value="หน่วยงานที่เกี่ยวข้อง">หน่วยงานที่เกี่ยวข้อง</option>
+          <option value="Facebook (Thailand)">Facebook (Thailand)</option>
+        </select>
+      </label>
+
+      <div id="ocpb_wrap" class="hidden">
+        <label>6.1 เลข OCPB
+          <input type="text" id="Cus_OCPB" placeholder="เช่น OCPB123456" />
+        </label>
+      </div>
+
+      <label>7.วันที่ประสานงาน
+        <input type="date" id="Cus_Follow_Date" onchange="formatThaiFollowDate()" />
+        <input type="hidden" id="Cus_Follow" value="......" />
+      </label>
+
+      <label>8.ติดตามครั้งที่
+        <input type="text" id="Cus_Que" placeholder="ตัวเลข" />
+      </label>
+
+      <label>9.อาการของผู้ร้องเรียน</label>
+      <div class="radio-group">
+        <label><input type="radio" name="Cus_Symptom" value="ไม่ซีเรียส" checked /> ไม่ซีเรียส</label>
+        <label><input type="radio" name="Cus_Symptom" value="รุนแรง" /> รุนแรง</label>
+      </div>
+
+      <label>10. หัวข้อเรื่อง
+        <select id="Cus_Topic" onchange="toggleTopicOther()">
+          <option value="">-- เลือกหัวข้อ --</option>
+          <option>ไม่ได้รับสินค้าหลอกลวง</option>
+          <option>ได้รับสินค้าไม่ตรงตามข้อตกลง</option>
+          <option>ได้รับสินค้าชำรุดแตกหัก</option>
+          <option>ได้รับสินค้าผิดกฎหมาย</option>
+          <option>เว็บที่มีเนื้อหาการพนัน</option>
+          <option>เว็บที่มีเนื้อหาอนาจาร</option>
+          <option>เว็บที่มีเนื้อหาหมิ่นเบื้องสูง</option>
+          <option>เว็บที่มีเนื้อหลอกขายสินค้า</option>
+          <option>เว็บที่มีเนื้อหาแอบอ้าง/ปลอมแปลง</option>
+          <option>บุกรุกขุดเจาะ</option>
+          <option value="__OTHER__">อื่นๆ (ระบุเอง)</option>
+        </select>
+      </label>
+      <div id="topic_other_wrap" class="hidden">
+        <label>โปรดระบุหัวข้ออื่นๆ
+          <input type="text" id="Cus_TopicOther" placeholder="พิมพ์หัวข้อเรื่อง" />
+        </label>
+      </div>
+
+      <div>
+        <button class="btn-primary" onclick="showOutput()">แสดงผล</button>
+        <button class="btn-reset" type="button" onclick="resetForm()">Reset</button>
+      </div>
+    </form>
+
+    <div class="output-box">
+      <div class="two-cols">
+        <div class="output-col">
+          <div id="result_left"></div>
+        </div>
+        <div class="output-col">
+          <div id="result_right"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // เดือนภาษาไทย
+    const thMonths = [
+      "มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน",
+      "กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"
+    ];
+
+    function setToday(id){
+      const d = new Date();
+      const day = d.getDate();
+      const month = thMonths[d.getMonth()];
+      const year = d.getFullYear() + 543;
+      document.getElementById(id).value = `${day} ${month} ${year}`;
+    }
+    function setNow(id){
+      const d = new Date();
+      const hh = String(d.getHours()).padStart(2,'0');
+      const mm = String(d.getMinutes()).padStart(2,'0');
+      document.getElementById(id).value = `${hh}.${mm}`;
+    }
+
+    // ฟังก์ชันใหม่: แปลงค่าจากปฏิทินเป็นวันที่ไทยแบบเต็ม
+    function formatThaiFollowDate() {
+      const dateVal = document.getElementById('Cus_Follow_Date').value;
+      if (!dateVal) {
+        document.getElementById('Cus_Follow').value = '......';
+        return;
+      }
+      const d = new Date(dateVal);
+      const day = d.getDate();
+      const month = thMonths[d.getMonth()];
+      const year = d.getFullYear() + 543;
+      document.getElementById('Cus_Follow').value = `${day} ${month} ${year}`;
+    }
+
+    function toggleOCPB(){
+      const type = document.getElementById('Cus_Type').value;
+      const wrap = document.getElementById('ocpb_wrap');
+      if (type.includes('สคบ')) {
+        wrap.classList.remove('hidden');
+      } else {
+        wrap.classList.add('hidden');
+        document.getElementById('Cus_OCPB').value = '';
+      }
+    }
+
+    function toggleTopicOther(){
+      const sel = document.getElementById('Cus_Topic').value;
+      const wrap = document.getElementById('topic_other_wrap');
+      if (sel === '__OTHER__') {
+        wrap.classList.remove('hidden');
+      } else {
+        wrap.classList.add('hidden');
+        document.getElementById('Cus_TopicOther').value = '';
+      }
+    }
+
+    function safeVal(v){ return (v && v.trim()) ? v.trim() : '......'; }
+
+    function stripWO(v){
+      if (!v || !v.trim()) return '......';
+      let s = v.trim();
+      if (/^wo/i.test(s)) s = s.replace(/^wo/i,'');
+      return s.trim() || '......';
+    }
+
+    function resetForm(){
+      if (!confirm('คุณต้องการล้างข้อมูลฟอร์มทั้งหมดหรือไม่?')) return;
+      document.getElementById('trackForm').reset();
+      document.getElementById('Cus_Date').value = '';
+      document.getElementById('Cus_Time').value = '';
+      document.getElementById('Cus_Follow').value = '......'; // ล้างค่า hidden date
+      document.getElementById('result_left').innerHTML = '';
+      document.getElementById('result_right').innerHTML = '';
+      document.getElementById('ocpb_wrap').classList.add('hidden');
+      document.getElementById('Cus_OCPB').value = '';
+      document.getElementById('topic_other_wrap').classList.add('hidden');
+      document.getElementById('Cus_TopicOther').value = '';
+    }
+
+    function copySection(btn, id){
+      const el = document.getElementById(id);
+      const tmp = document.createElement('textarea');
+      tmp.value = el.innerText || '';
+      document.body.appendChild(tmp);
+      tmp.select();
+      document.execCommand('copy');
+      document.body.removeChild(tmp);
+      btn.textContent = 'คัดลอกแล้ว!';
+      btn.disabled = true;
+      setTimeout(()=>{ btn.textContent='Copy'; btn.disabled=false; }, 1100);
+    }
+
+    function getTopicText(){
+      const sel = document.getElementById('Cus_Topic').value;
+      if (sel === '__OTHER__') {
+        const other = safeVal(document.getElementById('Cus_TopicOther').value);
+        return other;
+      }
+      return safeVal(sel);
+    }
+
+    function showOutput(){
+      // อ่านค่าฟอร์ม
+      const rawName   = safeVal(document.getElementById('Cus_Name').value);
+      const Cus_Name  = rawName;
+      const Cus_Tel   = safeVal(document.getElementById('Cus_Tel').value);
+      const Cus_WOraw = document.getElementById('Cus_WO').value;
+      const Cus_WO    = safeVal(Cus_WOraw);         // แสดงในไลน์/อื่น ๆ
+      const Cus_WOq   = stripWO(Cus_WOraw);         // ใช้ใน query / CRM
+      const Cus_Date  = safeVal(document.getElementById('Cus_Date').value);
+      const Cus_Time  = safeVal(document.getElementById('Cus_Time').value);
+      const Cus_Type  = safeVal(document.getElementById('Cus_Type').value);
+      const Cus_Follow= safeVal(document.getElementById('Cus_Follow').value); // ใช้ค่าจาก hidden field ที่แปลงแล้ว
+      const Cus_Que   = safeVal(document.getElementById('Cus_Que').value);
+      const Cus_OCPB  = safeVal(document.getElementById('Cus_OCPB').value);
+      const symptom   = (document.querySelector('input[name="Cus_Symptom"]:checked')?.value) || 'ไม่ซีเรียส';
+      const Cus_TopicText = getTopicText();
+
+      // ฟังก์ชันตัดคำนำหน้าชื่อเฉพาะส่วนที่ต้องการ
+      let Cus_Name_NoPrefix = rawName;
+      if (rawName !== '......') {
+          // ตัดคำนำหน้า นาย, นาง, นางสาว, น.ส., ด.ช., ด.ญ. (รวมถึงช่องว่างหลังคำนำหน้าถ้ามี)
+          Cus_Name_NoPrefix = rawName.replace(/^(นาย|นางสาว|นาง|น\.ส\.|ด\.ช\.|ด\.ญ\.)\s*/g, '').trim();
+      }
+
+      // คอลัมน์ซ้าย
+      let left = '';
+      const title = t => `<div class="red-highlight">${t}</div>`;
+
+      // กรณีติดตามสถานะ ครั้งที่ (แยกสคริปต์ตามช่วง)
+      const qn = parseInt(Cus_Que);
+      if (qn === 1 || qn === 2){
+        left += title("กรณีติดตามสถานะ ครั้งที่ 1-2 ครั้ง");
+        left += `<button class="btn-copy-section" type="button" onclick="copySection(this,'section_status_left')">Copy</button>
+<div class="output-pre" id="section_status_left">สวัสดีค่ะ คุณ${Cus_Name} จากการตรวจสอบเลขรับเรื่อง WO${Cus_WOq} ของท่าน ทางศูนย์ฯ ได้รับเอกสารครบถ้วนแล้ว และขณะนี้อยู่ระหว่างการดำเนินการและประสานงานไปยังหน่วยงานที่เกี่ยวข้อง 
+
+หากท่านมีข้อสงสัยเพิ่มเติม สามารถติดต่อหมายเลขสายด่วน 1212 ได้ตลอด 24 ชั่วโมงค่ะ</div>`;
+      } else if (qn === 3 || qn === 4){
+        left += title("กรณีติดตามสถานะ ครั้งที่ 3-4 ครั้ง");
+        left += `<button class="btn-copy-section" type="button" onclick="copySection(this,'section_status_left')">Copy</button>
+<div class="output-pre" id="section_status_left">สวัสดีค่ะ เจ้าหน้าที่ต้องขออภัยในความไม่สะดวกด้วยนะคะ ขณะนี้เรื่องร้องเรียนของท่านอยู่ระหว่างการดำเนินการและประสานงานไปยังหน่วยงานที่เกี่ยวข้อง 
+
+อย่างไรแล้วหากมีความคืบหน้าทางศูนย์ฯ จะแจ้งให้ท่านทราบต่อไปค่ะ
+
+หากท่านมีข้อสงสัยเพิ่มเติมสามารถติดต่อทางศูนย์ฯ ได้ที่หมายเลขสายด่วน 1212 ตลอด 24 ชั่วโมงค่ะ</div>`;
+      } else if (!isNaN(qn) && qn >= 5){
+        left += title("กรณีติดตามสถานะ มากกว่า 5 ครั้ง");
+        left += `<button class="btn-copy-section" type="button" onclick="copySection(this,'section_status_left')">Copy</button>
+<div class="output-pre" id="section_status_left">สวัสดีค่ะ ขณะนี้เลขรับเรื่อง WO${Cus_WOq} ของท่านอยู่ระหว่างการดำเนินการและประสานงานไปยังหน่วยงานที่เกี่ยวข้อง ซึ่งสำหรับระยะเวลาในการดำเนินการขึ้นอยู่กับแต่ละกรณีของหน่วยงาน
+
+ทั้งนี้ ทางศูนย์ฯ ไม่ได้นิ่งนอนใจ โดยจะมีกระบวนการติดตามผลร่วมกับหน่วยงานที่เกี่ยวข้องค่ะ
+
+หากท่านมีข้อสงสัยเพิ่มเติมสามารถติดต่อทางศูนย์ฯ ได้ที่หมายเลขสายด่วน 1212 ตลอด 24 ชั่วโมงค่ะ</div>`;
+      }
+
+      // บันทึก CRM (ซ้าย) — ไม่แสดงอาการผู้ร้อง
+      left += title("บันทึก CRM");
+      left += `<button class="btn-copy-section" type="button" onclick="copySection(this,'section_crm_left')">Copy</button>
+<div class="output-pre" id="section_crm_left">//ติดตามผล อ้างอิง WO${Cus_WOq} วันที่ ${Cus_Date} เวลา ${Cus_Time} น. ผู้ร้องชื่อ ${Cus_Name} หมายเลขโทรศัพท์ ${Cus_Tel} ติดต่อเข้ามาเพื่อติดตามผล เบื้องต้นจากการตรวจสอบอยู่ระหว่างการประสานงานไปยังหน่วยงานที่เกี่ยวข้อง</div>`;
+
+      // คอลัมน์ขวา
+      let right = '';
+
+      // กรณีประสานงานไปยังหน่วยงานแล้ว (ขวา) — *** ส่วนที่ตัดคำนำหน้าชื่อตามที่แจ้ง ***
+      right += title("กรณีประสานงานไปยังหน่วยงานแล้ว");
+      right += `<button class="btn-copy-section" type="button" onclick="copySection(this,'section_co_right')">Copy</button>`;
+
+      if (Cus_Type.includes('สคบ')){
+        const ocBodyShow = Cus_OCPB.startsWith('......')
+          ? '......'
+          : (Cus_OCPB.replace(/^OCPB\s*/i,'').trim() || '......');
+        right += `<div class="output-pre" id="section_co_right">สวัสดีค่ะ คุณ${Cus_Name_NoPrefix} ขณะนี้เรื่องของท่านอยู่ระหว่างการดำเนินการของทางสำนักงานคณะกรรมการคุ้มครองผู้บริโภค (สคบ.) หมายเลขอ้างอิง OCPB${ocBodyShow} หากท่านมีข้อสงสัยเพิ่มเติมสามารถติดต่อทางศูนย์ฯ ได้ที่หมายเลขสายด่วน 1212 ตลอด 24 ชั่วโมงค่ะ</div>`;
+      } else {
+        right += `<div class="output-pre" id="section_co_right">สวัสดีค่ะ คุณ${Cus_Name_NoPrefix} จากที่ท่านผู้ร้องได้ทำการแจ้งเรื่องร้องเรียนตามหมายเลขรับเรื่อง WO${Cus_WOq} และส่งหลักฐานเข้ามาทางศูนย์ฯ ครบถ้วนเรียบร้อยแล้ว ขณะนี้เจ้าหน้าที่ได้ทำการประสานงานไปยัง ${Cus_Type} โดยเรื่องร้องเรียนของท่านอยู่ระหว่างการดำเนินการของทางหน่วยงาน หากมีข้อสงสัยเพิ่มเติม สามารถติดต่อหมายเลขสายด่วน 1212 ได้ตลอด 24 ชั่วโมงค่ะ</div>`;
+      }
+
+      // บันทึก CRM (ขวา) — ไม่แสดงอาการผู้ร้อง
+      right += title("บันทึก CRM");
+      right += `<button class="btn-copy-section" type="button" onclick="copySection(this,'section_crm_right')">Copy</button>`;
+      if (Cus_Type.includes('สคบ')){
+        const ocBody = Cus_OCPB.startsWith('......')
+          ? '......'
+          : (Cus_OCPB.replace(/^OCPB\s*/i,'').trim() || '......');
+        right += `<div class="output-pre" id="section_crm_right">ผู้ร้องติดตามผล อ้างอิง WO${Cus_WOq} (ครั้งที่ ${Cus_Que}) วันที่ ${Cus_Date} เวลา ${Cus_Time} น. // ผู้ร้องชื่อ ${Cus_Name} หมายเลขโทรศัพท์ ${Cus_Tel} ติดต่อเข้ามาเพื่อติดตามผล เบื้องต้นได้แจ้งให้ทราบว่าขณะนี้เรื่องของผู้ร้องอยู่ระหว่างการดำเนินการของทางสำนักงานคณะกรรมการคุ้มครองผู้บริโภค (สคบ.) หมายเลข OCPB${ocBody} หากมีข้อสงสัยเพิ่มเติมสามารถติดต่อทางศูนย์ฯ ได้ที่หมายเลขสายด่วน 1212 ตลอด 24 ชั่วโมงค่ะ</div>`;
+      } else {
+        right += `<div class="output-pre" id="section_crm_right">ผู้ร้องติดตามผล อ้างอิง WO${Cus_WOq} (ครั้งที่ ${Cus_Que}) วันที่ ${Cus_Date} เวลา ${Cus_Time} น. // ผู้ร้องชื่อ ${Cus_Name} หมายเลขโทรศัพท์ ${Cus_Tel} ติดต่อเข้ามาเพื่อติดตามผล เบื้องต้นได้แจ้งให้ทราบว่าขณะนี้เรื่องของผู้ร้องอยู่ระหว่างการดำเนินการของ${Cus_Type} หากมีข้อสงสัยเพิ่มเติมสามารถติดต่อทางศูนย์ฯ ได้ที่หมายเลขสายด่วน 1212 ตลอด 24 ชั่วโมงค่ะ</div>`;
+      }
+
+      // แจ้งผ่าน Line (ขวา) — ดึงจาก ข้อ 10 และ ข้อ 6
+      right += title("แจ้งผ่าน Line");
+
+      let WO_Show = Cus_WO;
+      if (!/^wo/i.test(WO_Show)) WO_Show = 'WO' + WO_Show;
+      if (WO_Show === 'WO' || WO_Show === 'WO......') WO_Show = 'WO......';
+
+      const topicLine = Cus_TopicText;     // จาก ข้อ 10
+      const agencyLine = Cus_Type;         // จาก ข้อ 6
+
+      right += `<button class="btn-copy-section" type="button" onclick="copySection(this,'section_line')">Copy</button>`;
+
+      let lineText = `ผู้ร้องติดตามเรื่อง ${topicLine}
+หมายเลขอ้างอิง : ${WO_Show}
+หน่วยงาน : ${agencyLine}
+ชื่อ : ${Cus_Name}
+วันที่ติดตาม : ${Cus_Date}
+วันที่ประสานงาน : ${Cus_Follow}
+ผู้ร้องติดตามครั้งที่ ${Cus_Que}`;
+
+      // แสดง "อาการผู้ร้อง : รุนแรง" เฉพาะเมื่อเลือก รุนแรง
+      if (symptom === "รุนแรง") {
+        lineText += `\nอาการผู้ร้อง : รุนแรง`;
+      }
+
+      right += `<div class="output-pre" id="section_line">${lineText}</div>`;
+
+      // แสดงผล
+      document.getElementById('result_left').innerHTML  = left;
+      document.getElementById('result_right').innerHTML = right;
+    }
+  </script>
+</body>
+</html>

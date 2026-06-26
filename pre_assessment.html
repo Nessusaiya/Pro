@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>แบบประเมินก่อนรับเคส</title>
+<style>
+body {
+  font-family: 'Sarabun', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f4f6fb;
+  color: #222;
+}
+.container {
+  background: #fff;
+  max-width: 680px;
+  margin: 36px auto 36px auto;
+  border-radius: 14px;
+  padding: 36px 32px;
+  box-shadow: 0 8px 32px #0002;
+}
+h2 {
+  margin-top: 0;
+  color: #1a6a80;
+  text-align: center;
+  letter-spacing:1px;
+}
+label {
+  display: block;
+  margin-bottom: 20px;
+  font-weight: 500;
+  font-size: 1.1em;
+}
+input[type="text"], textarea {
+  font-size: 1em;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #bcd;
+  margin-top: 7px;
+  width: 95%;
+  max-width: 500px;
+  margin-bottom: 7px;
+  transition: border 0.2s;
+}
+input[type="text"]:focus, textarea:focus {
+  border-color: #4babc2;
+  outline: none;
+}
+.radio-wrap {
+  display: flex;
+  gap: 20px;
+  margin: 8px 0 3px 0;
+}
+input[type="radio"] {
+  accent-color: #1a6a80;
+  margin-right: 7px;
+}
+button {
+  background: #23b4b2;
+  color: #fff;
+  padding: 11px 28px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.08em;
+  cursor: pointer;
+  margin-top: 16px;
+  margin-bottom: 14px;
+  transition: background 0.18s;
+  box-shadow: 0 2px 7px #0001;
+}
+button:hover { background: #14848e;}
+#result {
+  margin-top: 32px;
+  background: #e9f6fc;
+  border: 1px solid #c4e2ec;
+  padding: 23px 20px;
+  border-radius: 8px;
+  font-size: 1.06em;
+  min-height: 48px;
+  color: #123;
+  white-space: pre-line;
+}
+.note {
+  margin-top: 16px;
+  color: #c0392b;
+  font-size: 1.12em;
+  font-weight: bold;
+  text-align: center;
+}
+.hidden { display: none; }
+.guide {
+  color: #ba6800;
+  font-size: .95em;
+  margin-top: 2px;
+  margin-bottom: 2px;
+  font-style: italic;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>แบบประเมินก่อนรับเคส</h2>
+  <form id="preForm" autocomplete="off" onsubmit="event.preventDefault(); showResult();">
+    <label>
+      1. สั่งซื้ออะไร:
+      <input type="text" id="item" placeholder="*สิ่งที่รับไม่ได้ เช่น ยาเสพติด ไอดีเกม บุหรี่ไฟฟ้า ยาไม่มี อย. ปืน ปืนอัดลมแรงดันสูง*">
+      <div class="guide">*สิ่งที่รับไม่ได้ เช่น ยาเสพติด, ไอดีเกม, บุหรี่ไฟฟ้า, ยาไม่มี อย., ปืน, ปืนอัดลมเกินแรงดัน*</div>
+    </label>
+    <label>
+      2. โอนเงินเมื่อไหร่:
+      <input type="text" id="date" placeholder="เช่น 29 มิถุนายน 2568">
+      <div class="guide" id="over90Guide" style="display:none;">อายุความเกิน 90 วัน (มากกว่า 3 เดือน) — <b style="color:#c00;">รับเรื่องไม่ได้</b></div>
+    </label>
+    <label>
+      3. ช่องทางการสั่งซื้อ:
+      <input type="text" id="channel" placeholder="เช่น Facebook, IG, Shopee, Website ฯลฯ">
+    </label>
+    <label>
+      4. โอนเงินแบบไหน:
+      <span class="radio-wrap">
+        <input type="radio" name="paymentType" value="ชำระให้ผู้จำหน่ายโดยตรง" checked onchange="toggleOtherPayment(false)"> ชำระให้ผู้จำหน่ายโดยตรง
+        <input type="radio" name="paymentType" value="ชำระปลายทาง" onchange="toggleOtherPayment(false)"> ชำระปลายทาง
+        <input type="radio" name="paymentType" value="อื่นๆ" onchange="toggleOtherPayment(true)"> อื่นๆ
+      </span>
+      <input type="text" id="paymentType_other" class="hidden" placeholder="โปรดระบุรายละเอียด">
+      <div class="guide">*รับไม่ได้ เช่น นัดรับกับผู้ขายโดยตรง*</div>
+    </label>
+    <label>
+      5. มูลค่าความเสียหายเท่าไหร่:
+      <input type="text" id="amount" placeholder="จำนวนเงิน หรือ ราคาสินค้า">
+    </label>
+    <button type="submit">แสดงผล</button>
+  </form>
+
+  <div id="result"><b>ผลการประเมินจะแสดงที่นี่...</b></div>
+  <div class="note">
+    ให้ตรวจสอบอย่างถูกต้อง หากสามารถรับเรื่องได้ ให้สอบถามการยินยอมในการให้ข้อมูลส่วนบุคคลกับทางศูนย์
+  </div>
+</div>
+
+<script>
+// ----- Toggle ช่องอื่นๆ ข้อ 4 -----
+function toggleOtherPayment(show) {
+  document.getElementById('paymentType_other').classList.toggle('hidden', !show);
+}
+
+// ----- ตรวจอายุความ 90 วัน (แปลงเป็นเดือน) -----
+function parseDateTh(dateStr) {
+    let d = dateStr.trim();
+    let months = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+    let found = d.match(/(\d{1,2})\s*([^\s]+)\s*(\d{4})/);
+    if (found) {
+        let dd = parseInt(found[1]), mm = months.indexOf(found[2]) + 1, yy = parseInt(found[3]);
+        if (dd && mm && yy) return new Date(yy - 543, mm - 1, dd); // ปีไทยลบ 543
+    }
+    let found2 = d.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (found2) {
+        let dd = parseInt(found2[1]), mm = parseInt(found2[2]), yy = parseInt(found2[3]);
+        if (dd && mm && yy) return new Date(yy, mm - 1, dd);
+    }
+    return null;
+}
+function check90day() {
+    let input = document.getElementById('date').value.trim();
+    let guide = document.getElementById('over90Guide');
+    let dt = parseDateTh(input);
+    if (!dt) { guide.style.display = 'none'; return false; }
+    let now = new Date();
+    let diff = now - dt;
+    let days = diff / 86400000;
+    if (days > 90) {
+        guide.style.display = '';
+        return true;
+    } else {
+        guide.style.display = 'none';
+        return false;
+    }
+}
+document.getElementById('date').addEventListener('input', check90day);
+
+// ----- แสดงผล -----
+function showResult() {
+  let item = document.getElementById('item').value || "...";
+  let date = document.getElementById('date').value || "...";
+  let channel = document.getElementById('channel').value || "...";
+  let amount = document.getElementById('amount').value || "...";
+
+  let payType = document.querySelector('input[name="paymentType"]:checked')?.value || "...";
+  if(payType === "อื่นๆ") payType = document.getElementById("paymentType_other").value || "อื่นๆ";
+
+  let isOver = check90day();
+
+  let text = `<b>ข้อมูลการประเมินเบื้องต้น:</b>\n
+1. สั่งซื้ออะไร: ${item}
+2. โอนเงินเมื่อไหร่: ${date} ${(isOver ? "❗️อายุความเกิน 90 วัน (รับเรื่องไม่ได้)" : "")}
+3. ช่องทางการสั่งซื้อ: ${channel}
+4. โอนเงินแบบไหน: ${payType}
+5. มูลค่าความเสียหาย: ${amount}`;
+
+  document.getElementById('result').innerHTML = text;
+}
+</script>
+</body>
+</html>

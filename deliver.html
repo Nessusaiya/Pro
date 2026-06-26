@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>ใบนำส่ง</title>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background: #f7fafc; }
+        .box { background: #fff; max-width: 800px; margin: 32px auto; padding: 36px 32px; border-radius: 20px; box-shadow: 0 8px 30px #0001; }
+        h2 { text-align:center; color: #228; letter-spacing:1px; margin-bottom: 24px;}
+        .section-title { color: #166; font-size: 1.17em; margin-top: 28px; margin-bottom: 10px; font-weight: bold; border-left: 4px solid #4fd; padding-left: 10px;}
+        .line { margin-bottom: 12px; }
+        .info-label { font-weight: bold; }
+        .main-block { margin-bottom: 34px; }
+        .value { color: #222; font-weight: bold;}
+        .red { color: #c33; }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h2>ใบนำส่ง (ข้อมูลประกอบเคส)</h2>
+    <div id="deliver-area"></div>
+</div>
+<script>
+function escapeHtml(s) { return (s||"").replace(/[<>&"]/g, m=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[m])); }
+
+// === แจ้งหน้า opener (form) ว่าพร้อมรับแล้ว เพื่อส่งข้อมูลแบบ instant ได้ ===
+window.addEventListener('DOMContentLoaded', () => {
+  try { if (window.opener) window.opener.postMessage({ type: 'deliverReady' }, '*'); } catch (_) {}
+});
+
+// ฟังก์ชันเรนเดอร์หลักจาก localStorage (กรณีเปิดหน้านี้ตรง ๆ)
+function renderDeliver() {
+    let cases = [];
+    try { cases = JSON.parse(localStorage.getItem("myCases") || "[]"); } catch {}
+    let caseData = {};
+    for (let i = cases.length-1; i >= 0; i--) {
+        const c = cases[i] || {};
+        if (
+            (c.formType && (c.formType === "form" || c.formType === "noproduct")) ||
+            (!c.formType && c.name === "กรณีไม่ได้รับสินค้า/หลอกลวง") ||
+            (c.name === "ไม่ได้รับสินค้า/หลอกลวง")
+        ) { caseData = c.data || {}; break; }
+    }
+    if (!caseData || Object.keys(caseData).length === 0) {
+        try { caseData = JSON.parse(localStorage.getItem("deliverPreview") || "{}"); } catch {}
+    }
+    if (!caseData || Object.keys(caseData).length === 0) {
+        try { caseData = JSON.parse(localStorage.getItem("formCase") || "{}"); } catch {}
+    }
+    renderDeliverFromPayload(caseData);
+}
+
+// รับข้อมูลแบบทันทีจาก postMessage
+window.addEventListener('message', (e) => {
+  try {
+    const isFile = location.protocol === 'file:';
+    if (!isFile && e.origin !== window.location.origin) return;
+    const msg = e.data || {};
+    if (msg.type === 'deliverData' && msg.payload && typeof msg.payload === 'object') {
+      renderDeliverFromPayload(msg.payload);
+    }
+  } catch (_) {}
+});
+
+// เรนเดอร์จาก payload
+function renderDeliverFromPayload(caseData) {
+    caseData = caseData || {};
+
+    // พฤติการณ์: เอาเฉพาะข้อความจากปุ่ม "แสดงผล" เท่านั้น
+    let eventText = (localStorage.getItem("form_result") || ""); // ไม่อ่านจากแหล่งอื่น
+    // แปลงขึ้นบรรทัดทุกแบบให้เป็น "ช่องว่างเดียว"
+    eventText = eventText
+        .replace(/<br\s*\/?>/gi, " ")
+        .replace(/\r?\n|\r/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    // ส่วนอื่น ๆ ตามเดิม
+    const damageValueText = `<span class="value">${escapeHtml(caseData.Product_Price||"")}</span> บาท`;
+
+    let html = `<div class="main-block">
+        <div class="section-title">ข้อมูลผู้แจ้ง</div>
+        <div class="line"><span class="info-label">ชื่อ - นามสกุล:</span> <span class="value">${escapeHtml(caseData.Complainant_Name||"")}</span></div>
+        <div class="line"><span class="info-label">ที่อยู่:</span> <span class="value">${escapeHtml(caseData.Complainant_Address||"")}</span></div>
+        <div class="line"><span class="info-label">เบอร์โทรศัพท์หลัก:</span> <span class="value">${escapeHtml(caseData.Complainant_Tel||"")}</span></div>
+        <div class="line"><span class="info-label">เลขบัตรประชาชน:</span> <span class="value">${escapeHtml(caseData.Complainant_ID||"")}</span></div>
+        <div class="line"><span class="info-label">ข้อมูลผู้แจ้งเพิ่มเติม:</span> <span class="red">กรุณาดูจาก CRM หรือ Line ของผู้ร้องใน CRM</span></div>
+    </div>`;
+
+    html += `<div class="main-block">
+        <div class="section-title">เรื่องที่แจ้ง</div>
+        <div class="line"><span class="info-label">พฤติการณ์:</span> ${eventText ? escapeHtml(eventText) : ""}</div>
+        <div class="line"><span class="info-label">วันเวลาที่เกิดเหตุ:</span> วันที่ <span class="value">${escapeHtml(caseData.Order_Date||"")}</span> เวลา <span class="value">${escapeHtml(caseData.Order_Time||"")}</span> น.</div>
+        <div class="line"><span class="info-label">สถานที่เกิดเหตุ:</span> <span class="value">${escapeHtml(caseData.Buying_Address || caseData.Complainant_Address || "")}</span></div>
+        <div class="line"><span class="info-label">จำนวนความเสียหาย (คน):</span> <span class="red">กรุณาคำนวณจากเคสเอง</span></div>
+        <div class="line"><span class="info-label">มูลค่าความเสียหาย:</span> ${damageValueText}</div>
+    </div>`;
+
+    html += `<div class="main-block">
+        <div class="section-title">พยานหลักฐานประกอบการแจ้ง</div>
+        <div class="line"><span class="info-label">บัญชีธนาคารของผู้เสียหาย:</span> <span class="value">${escapeHtml(caseData.StartBank_Name||"")} ${escapeHtml(caseData.StartBank_UserName||"")} ${escapeHtml(caseData.StartBank_Number||"")}</span></div>
+    </div>`;
+
+    const sellerTelText = caseData.Seller_Tel && caseData.Seller_Tel !== "..." 
+        ? `<span class="value">${escapeHtml(caseData.Seller_Tel)}</span>`
+        : '<span style="color:#a00">ไม่ทราบเบอร์โทรศัพท์ผู้จำหน่าย</span>';
+    const sellerName = escapeHtml(caseData.Seller_Name || "");
+    const sellerUrl = escapeHtml(caseData.Seller_URL || "");
+    html += `<div class="main-block">
+        <div class="section-title">ผู้กล่าวหา</div>
+        <div class="line"><span class="info-label">ชื่อนาม-สกุล / ชื่อเล่น-ฉายา:</span> <span class="value">${sellerName}</span></div>
+        <div class="line"><span class="info-label">ที่อยู่:</span> <span class="red">ไม่มี หรือค้นหาเพิ่มเติมจากตัวเคส</span></div>
+        <div class="line"><span class="info-label">เลขบัตรประชาชน:</span> <span class="red">ไม่มี หรือค้นหาเพิ่มเติมจากตัวเคส</span></div>
+        <div class="line"><span class="info-label">ช่องทางการติดต่อ:</span></div>
+        <div class="line" style="margin-left:2em;"><span class="info-label">เบอร์โทรศัพท์</span> ${sellerTelText}</div>
+        <div class="line" style="margin-left:2em;"><span class="info-label">Line ชื่อ</span> …………….URL………………………………</div>
+        <div class="line" style="margin-left:2em;"><span class="info-label">Facebook ชื่อ</span> ${sellerName ? sellerName : "……………. "} URL ${sellerUrl ? sellerUrl : "………………………………"}</div>
+        <div class="line" style="margin-left:2em;"><span class="info-label">Instagram ชื่อ</span> …………….URL………………………………</div>
+        <div class="line" style="margin-left:2em;"><span class="info-label">อื่นๆ</span> กรุณาตรวจสอบเพิ่มเติม หากมีช่องทางอื่นๆ</div>
+        <div class="line"><span class="info-label">เลขบัญชีธนาคาร:</span> <span class="value">${escapeHtml(caseData.StartBank_Name||"")} ${escapeHtml(caseData.StartBank_UserName||"")} ${escapeHtml(caseData.StartBank_Number||"")}</span></div>
+    </div>`;
+
+    html += `<div class="main-block">
+        <div class="section-title">ประเภทความผิด</div>
+        <div class="line"><span class="value">ไม่ได้รับสินค้า/หลอกลวง</span></div>
+    </div>`;
+
+    let policeBlock = '';
+    let policeType = (caseData.PoliceType || "").toString().trim();
+    if (policeType === "station") policeType = "สถานีตำรวจ";
+    if (policeType === "online")  policeType = "ออนไลน์";
+
+    if (policeType === "สถานีตำรวจ") {
+        const policeStationType = (caseData.PoliceStationType || "…").toString().trim();
+        policeBlock = `<span class="info-label">แจ้งความที่สถานีตำรวจ${escapeHtml(policeStationType)}</span> <span class="value">${escapeHtml(caseData.PoliceStation_name||"…")}</span>
+        <span class="info-label">จังหวัด</span> <span class="value">${escapeHtml(caseData.PoliceStation_province||"…")}</span>
+        <span class="info-label">วันที่</span> <span class="value">${escapeHtml(caseData.PoliceStation_date||"…")}</span>
+        <span class="info-label">เวลา</span> <span class="value">${escapeHtml(caseData.PoliceStation_time||"…")}</span> น.`;
+    } else if (policeType === "ออนไลน์") {
+        let policeOnlineDateType = "วันที่ ............";
+        if((caseData.PoliceOnlineDateType||"").trim() === "วันที่แจ้งเหตุ") policeOnlineDateType = "วันที่แจ้งเหตุ";
+        if((caseData.PoliceOnlineDateType||"").trim() === "วันที่นัดหมาย") policeOnlineDateType = "วันที่นัดหมาย";
+        policeBlock = `<span class="info-label">แจ้งความออนไลน์ผ่าน</span> <span class="value">www.thaipoliceonline.go.th</span>
+        <span class="info-label">เลขรับแจ้งความออนไลน์</span> <span class="value">${escapeHtml(caseData.PoliceOnline_Number||"…")}</span>
+        <span class="info-label">${policeOnlineDateType}</span> <span class="value">${escapeHtml(caseData.PoliceOnline_date||"…")}</span>
+        <span class="info-label">เวลา</span> <span class="value">${escapeHtml(caseData.PoliceOnline_time||"…")}</span> น.`;
+    }
+    html += `<div class="main-block">
+        <div class="section-title">ไปแจ้งความที่</div>
+        <div class="line">${policeBlock}</div>
+    </div>`;
+
+    document.getElementById("deliver-area").innerHTML = html;
+}
+
+window.addEventListener('DOMContentLoaded', renderDeliver);
+</script>
+</body>
+</html>

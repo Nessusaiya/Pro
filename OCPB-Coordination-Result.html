@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>แบบฟอร์มตอบกลับ OCPB (สคบ.)</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f2f5;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .smart-box {
+      background: #eefbff;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px dashed #1e88a5;
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 15px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+
+    .input-highlight {
+      border-color: #1ed8ea !important;
+      background-color: #fff;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #007bff;
+      border: none;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      width: 100%;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #result {
+      margin-top: 30px;
+      white-space: pre-line;
+      background-color: #f9f9f9;
+      border-left: 5px solid #007bff;
+      padding: 15px;
+      border-radius: 6px;
+      display: none;
+    }
+
+    .section-title {
+      font-weight: bold;
+      margin-top: 15px;
+      margin-bottom: 5px;
+      color: #0056b3;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 5px;
+    }
+
+    .copy-btn {
+      background-color: #28a745;
+      margin-top: 10px;
+      font-size: 14px;
+      padding: 8px;
+    }
+
+    .copy-btn.copied {
+      background-color: #155724 !important;
+    }
+
+    small {
+      color: #666;
+      display: block;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>ฟอร์มตอบกลับผู้ร้อง (OCPB / สคบ.)</h2>
+
+    <div class="smart-box">
+      <label style="color: #167ca5; margin-top: 0;">⚡ วางข้อมูลรวมจาก Sheet ที่นี่ (ระบบจะแยกชื่อและเลข OCPB ให้เอง):</label>
+      <input type="text" id="smart_paste" class="input-highlight" placeholder="วางข้อมูล เช่น นายทินพันธ์ ตวงทองWO251233...OCPB0669/00015">
+      <small>*ระบบจะข้ามเลข WO และดึงเฉพาะ ชื่อ กับ OCPB ให้อัตโนมัติ</small>
+    </div>
+
+    <hr>
+
+    <label for="name">ชื่อผู้ร้อง (ไม่ต้องใส่ นาย/นาง/นางสาว):</label>
+    <input type="text" id="name" placeholder="ระบุชื่อผู้ร้อง">
+
+    <label for="ocpb_no">เลข OCPB:</label>
+    <input type="text" id="ocpb_no" placeholder="ระบุเลขรับเรื่อง OCPB">
+
+    <button onclick="generateReply()">Query</button>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    // ฟังก์ชันแยกข้อมูลอัตโนมัติเมื่อมีการวางข้อความ
+    document.getElementById('smart_paste').addEventListener('input', function(e) {
+      const rawData = e.target.value.trim();
+      if (!rawData) return;
+
+      // 1. แยกเลข OCPB (หาข้อความที่ขึ้นต้นด้วย OCPB จนจบ)
+      const ocpbMatch = rawData.match(/OCPB[\w\d\/\-]+/i);
+      if (ocpbMatch) {
+        document.getElementById('ocpb_no').value = ocpbMatch[0];
+      }
+
+      // 2. แยกชื่อ (ดึงข้อความข้างหน้าสุด จนถึงก่อนเจอคำว่า WO)
+      const nameMatch = rawData.match(/^(.*?)(?=WO)/i);
+      if (nameMatch) {
+        document.getElementById('name').value = nameMatch[1].trim();
+      } else if (!ocpbMatch) {
+        // ถ้าไม่มีแพทเทิร์น WO ให้เอาค่าทั้งหมดใส่ช่องชื่อไว้ก่อน
+        document.getElementById('name').value = rawData;
+      }
+      
+      // ล้างช่องวางเพื่อให้พร้อมสำหรับการวางครั้งต่อไป
+      setTimeout(() => { e.target.value = ''; }, 500);
+    });
+
+    function removeTitleAndCleanSpaces(fullName) {
+      const titles = ["นางสาว", "นาย", "นาง", "คุณ"];
+      fullName = fullName.trim();
+
+      for (let title of titles) {
+        const regex = new RegExp("^" + title); 
+        if (regex.test(fullName)) {
+          fullName = fullName.replace(regex, "").trim();
+          break;
+        }
+      }
+
+      fullName = fullName.replace(/\s+/g, ' ');
+      return fullName;
+    }
+
+    function generateReply() {
+      let nameInput = document.getElementById("name").value.trim();
+      const ocpb = document.getElementById("ocpb_no").value.trim();
+
+      if (!nameInput || !ocpb) {
+        alert("กรุณากรอกชื่อและเลข OCPB ให้ครบถ้วน");
+        return;
+      }
+
+      const cleanName = removeTitleAndCleanSpaces(nameInput);
+
+      const message1 = `สวัสดีค่ะ คุณ${cleanName} ขณะนี้เรื่องของท่านอยู่ระหว่างการดำเนินการของทางสำนักงานคณะกรรมการคุ้มครองผู้บริโภค (สคบ.) หมายเลขอ้างอิง ${ocpb} หรือหากท่านมีข้อสงสัยเพิ่มเติมสามารถติดต่อทางศูนย์ฯ ได้ที่หมายเลขสายด่วน 1212 ตลอด 24 ชั่วโมงค่ะ`;
+
+      const message2 = `ติดต่อกลับผู้ร้องแจ้งสถานะการดำเนินงาน//สวัสดีค่ะ คุณ${cleanName} ขณะนี้เรื่องของท่านอยู่ระหว่างการดำเนินการของทางสำนักงานคณะกรรมการคุ้มครองผู้บริโภค (สคบ.) หมายเลขอ้างอิง ${ocpb} หรือหากท่านมีข้อสงสัยเพิ่มเติมสามารถติดต่อทางศูนย์ฯ ได้ที่หมายเลขสายด่วน 1212 ตลอด 24 ชั่วโมงค่ะ`;
+
+      const resultDiv = document.getElementById("result");
+      resultDiv.style.display = "block";
+      resultDiv.innerHTML = `
+        <div class="section-title">(ตอบผู้ร้อง)</div>
+        <div id="text1">${message1}</div>
+        <button class="copy-btn" onclick="copyToClipboard('text1', this)">คัดลอกข้อความตอบผู้ร้อง</button>
+
+        <div class="section-title">(ลง CRM)</div>
+        <div id="text2">${message2}</div>
+        <button class="copy-btn" onclick="copyToClipboard('text2', this)">คัดลอกข้อความลง CRM</button>
+      `;
+    }
+
+    function copyToClipboard(elementId, btn) {
+      const text = document.getElementById(elementId).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const originalText = btn.innerText;
+        btn.innerText = "✅ คัดลอกเรียบร้อย!";
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.innerText = originalText;
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

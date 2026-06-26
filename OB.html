@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ข้อมูลปัญหาการซื้อขายออนไลน์</title>
+    <style>
+        textarea {
+            width: 100%;
+            height: 200px;
+        }
+    </style>
+</head>
+<body>
+    <h1>ข้อมูลปัญหาการซื้อขายออนไลน์</h1>
+    <label for="data">ป้อนข้อมูล:</label><br>
+    <textarea id="data"></textarea><br><br>
+    <button onclick="processData()">ประมวลผล</button>
+    <h2>ผลลัพธ์:</h2>
+    <p id="result"></p>
+
+    <script src="https://cdn.jsdelivr.net/npm/compromise@v14/builds/compromise.min.js"></script>
+    <script>
+        function processData() {
+            var data = document.getElementById("data").value;
+            if (typeof window.nlp === 'function') {
+                var nlp = window.nlp(data);
+
+                // ดึงข้อมูลชื่อผู้ร้อง
+                var nameMatch = data.match(/ผู้ร้องชื่อ\s*(.+?)\s*หมายเลขบัตรประจำตัวประชาชน/);
+                var name = nameMatch ? nameMatch[1].trim() : "ไม่พบข้อมูล";
+
+                // ดึงข้อมูลที่อยู่
+                var addressMatch = data.match(/ที่อยู่ที่สามารถติดต่อได้\s*(.+?)\s*ผู้ร้องสั่งซื้อ/);
+                var address = addressMatch ? addressMatch[1].trim() : "ไม่พบข้อมูล";
+
+                // ดึงข้อมูลราคา
+                var priceMatch = data.match(/รวม\s*([\d,.]+)\s*บาท|ราคา\s*([\d,.]+)\s*บาท/);
+                var price = priceMatch ? (priceMatch[1] || priceMatch[2]) : "ไม่พบข้อมูล";
+
+                 // ดึงข้อมูลช่องทาง
+                var channelMatch = data.match(/ช่องทาง\s*(.+?)\s*\(URL/);
+                var channel = channelMatch ? channelMatch[1].trim() : "ไม่พบข้อมูล";
+
+                // ดึงข้อมูลรายละเอียดสินค้า
+                var productMatch = data.match(/ผู้ร้องสั่งซื้อเป็น\s*([^\n]+?(?=\s*จำนวน\s*\d+\s*(?:องค์|ชิ้น|รายการ|ชุด|ตัว|เล่ม|อัน|ผืน|คู่|เครื่อง|กิโลกรัม|อื่นๆ)|\s*แต่|\s*ได้รับ|\s*$))/);
+                var product = productMatch ? productMatch[1].trim() : "ไม่พบข้อมูล";
+
+                // ดึงข้อมูลหัวข้อร้องเรียน
+                var topicMatch = data.match(/^(.+?)\s*ผู้ร้องชื่อ/);
+                var topic = topicMatch ? topicMatch[1].trim() : "ไม่พบข้อมูลหรืออาจจะเป็นเคสแพลตฟอร์มดิจิทัล";
+
+                // แสดงผลลัพธ์
+                var result = "ชื่อผู้ร้อง: " + name + "<br>";
+                result = result + "ที่อยู่: " + address + "<br>";
+                result += "ราคา: " + price + "<br>";
+                result += "ช่องทาง: " + channel + "<br>";
+                result += "รายละเอียดสินค้า: " + product + "<br>";
+                result += "หัวข้อร้องเรียน: " + topic;
+                document.getElementById("result").innerHTML = result;
+            } else {
+                document.getElementById("result").innerHTML = "Error: Compromise library not loaded.";
+            }
+        }
+    </script>
+</body>
+</html>

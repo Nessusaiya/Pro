@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>ฟอร์มแจ้งเหตุ</title>
+  <style>
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background-color: #f4f6f8;
+      color: #223;
+      padding: 40px;
+    }
+
+    h2 {
+      color: #113366;
+      margin-bottom: 24px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 4px;
+      font-weight: bold;
+    }
+
+    input, select {
+      padding: 8px;
+      width: 100%;
+      max-width: 480px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background-color: #fff;
+      font-size: 1em;
+    }
+
+    .radio-box {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      background-color: #f0f4f8;
+      padding: 12px 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      max-width: 480px;
+    }
+
+    .radio-box label {
+      font-weight: normal;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    button {
+      padding: 10px 24px;
+      font-size: 1em;
+      background-color: #2f4f77;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+
+    button:hover {
+      background-color: #1e3a5f;
+    }
+
+    #result {
+      margin-top: 24px;
+      padding: 16px;
+      background-color: #eef2f5;
+      border-left: 4px solid #446;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>ฟอร์มแจ้งเหตุพบเห็นบัญชี แอบอ้าง/หลอกขายสินค้า/โดน Hack</h2>
+
+  <div class="form-group">
+    <label>ผู้ร้องชื่อ</label>
+    <input type="text" id="C_name">
+  </div>
+
+  <div class="form-group">
+    <label>แจ้งพบเห็น (ช่องทาง Social)</label>
+    <select id="C_Social" onchange="toggleOtherSocial(); updateQSocial();">
+      <option value="">-- เลือก --</option>
+      <option>Facebook</option>
+      <option>Instagram</option>
+      <option>Twitter</option>
+      <option>TikTok</option>
+      <option>YouTube</option>
+      <option>LINE</option>
+      <option>Discord</option>
+      <option>Reddit</option>
+      <option>X</option>
+      <option>อื่นๆ</option>
+    </select>
+    <input type="text" id="C_SocialOther" class="hidden" placeholder="โปรดระบุ" oninput="updateQSocial()">
+  </div>
+
+  <div class="form-group">
+    <label>ประเภท</label>
+    <select id="C_Target">
+      <option value="">-- เลือก --</option>
+      <option>ที่มีความพยายามบุกรุกขุดเจาะ</option>
+      <option>ที่มีเนื้อหาละเมิดข้อมูลส่วนบุคคล</option>
+      <option>ที่มีเนื้อหาแอบอ้าง/ปลอมแปลงตัวตน</option>
+      <option>ที่มีเนื้อหาหลอกขายสินค้า</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>ชื่อ</label>
+    <input type="text" id="C_Socialname">
+  </div>
+
+  <div class="form-group">
+    <label>URL</label>
+    <input type="text" id="C_SocailURL">
+  </div>
+
+  <div class="form-group">
+    <label>เลือกช่องทางการแจ้งความ</label>
+    <div class="radio-box">
+      <label><input type="radio" name="reportType" value="police" onchange="togglePolice(true)"> แจ้งความที่สถานีตำรวจ</label>
+      <label><input type="radio" name="reportType" value="online" onchange="togglePolice(false)"> แจ้งความออนไลน์</label>
+    </div>
+  </div>
+
+  <div id="policeSection" class="hidden">
+    <div class="form-group">
+      <label>ประเภทสถานี</label>
+      <select id="policeType" onchange="handlePoliceType()">
+        <option value="">-- เลือกประเภทสถานี --</option>
+        <option>สถานีตำรวจภูธร</option>
+        <option>สถานีตำรวจนครบาล</option>
+      </select>
+    </div>
+    <input type="text" id="policeStation" placeholder="ชื่อสถานี">
+    <input type="text" id="policeProvince" placeholder="จังหวัด">
+    <input type="date" id="policeDate">
+    <input type="time" id="policeTime">
+  </div>
+
+  <div id="onlineSection" class="hidden">
+    <input type="text" id="onlineNumber" placeholder="เลขรับแจ้งความออนไลน์">
+    <input type="date" id="onlineDate">
+    <input type="time" id="onlineTime">
+  </div>
+
+  <div class="form-group">
+    <label>ความประสงค์ของผู้ร้องคือต้องการให้ปิดกั้นการเข้าถึง</label>
+    <input type="text" id="Q_Social" readonly>
+  </div>
+
+  <button onclick="generateResult()">แสดงผล</button>
+  <button type="button" onclick="resetForm()">รีเซ็ตฟอร์ม</button>
+
+  <div id="result"></div>
+
+  <script>
+    const thMonths = ["", "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+                      "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+
+    function toggleOtherSocial() {
+      const social = document.getElementById("C_Social").value;
+      const other = document.getElementById("C_SocialOther");
+      other.classList.toggle("hidden", social !== "อื่นๆ");
+    }
+
+    function updateQSocial() {
+      const social = document.getElementById("C_Social").value;
+      const other = document.getElementById("C_SocialOther").value.trim();
+      const value = (social === "อื่นๆ") ? (other || "...............") : (social || "...............");
+      document.getElementById("Q_Social").value = value;
+    }
+
+    function handlePoliceType() {
+      const policeType = document.getElementById("policeType").value;
+      const provinceField = document.getElementById("policeProvince");
+      if (policeType === "สถานีตำรวจนครบาล") {
+        provinceField.value = "กรุงเทพมหานคร";
+        provinceField.readOnly = true;
+        provinceField.style.backgroundColor = "#e8eef4";
+        provinceField.style.color = "#555";
+      } else {
+        provinceField.value = "";
+        provinceField.readOnly = false;
+        provinceField.style.backgroundColor = "";
+        provinceField.style.color = "";
+      }
+    }
+
+    function togglePolice(isPolice) {
+      document.getElementById("policeSection").classList.toggle("hidden", !isPolice);
+      document.getElementById("onlineSection").classList.toggle("hidden", isPolice);
+    }
+
+    function val(id) {
+      const el = document.getElementById(id);
+      return el && el.value.trim() !== "" ? el.value.trim() : "...............";
+    }
+
+    // ฟังก์ชันสำหรับตัดคำนำหน้าชื่อรวมถึงยศต่าง ๆ
+    function stripPrefix(name) {
+      if (!name || name === "...............") return name;
+      // ตัด นาย, นางสาว, นาง, น.ส., ด.ช., ด.ญ. และ ว่าที่ร้อยตรี/โท/เอก (รวมแบบย่อ ร.ต.)
+      return name.replace(/^(นาย|นางสาว|นาง|น\.ส\.|ด\.ช\.|ด\.ญ\.|ว่าที่\s?ร้อยตรี|ว่าที่\s?ร้อยโท|ว่าที่\s?ร้อยเอก|ว่าที่\s?ร\.ต\.|ว่าที่\s?ร\.ท\.|ว่าที่\s?ร\.อ\.)\s*/g, '').trim();
+    }
+
+    function formatDateWithLabel(dateStr, timeStr, dateLabel = "วันที่") {
+      const missingDate = (!dateStr || dateStr === "...............");
+      const missingTime = (!timeStr || timeStr === "...............");
+
+      if (missingDate && missingTime) {
+        return `${dateLabel} ............... เวลา ............ น.`;
+      }
+
+      if (missingDate || missingTime) {
+        let datePart = "...............";
+        let timePart = "............";
+        if (!missingDate) {
+          const d = new Date(dateStr);
+          if (!isNaN(d.getTime())) {
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = thMonths[d.getMonth() + 1];
+            const year = d.getFullYear() + 543;
+            datePart = `${day} ${month} ${year}`;
+          }
+        }
+        if (!missingTime) {
+          const [h, m] = timeStr.split(":");
+          if (h !== undefined && m !== undefined) {
+            timePart = `${h.padStart(2, "0")}.${m.padStart(2, "0")}`;
+          }
+        }
+        return `${dateLabel} ${datePart} เวลา ${timePart} น.`;
+      }
+
+      const dt = new Date(dateStr + "T" + timeStr);
+      if (isNaN(dt.getTime())) return `${dateLabel} ............... เวลา ............ น.`;
+
+      const day = String(dt.getDate()).padStart(2, '0');
+      const month = thMonths[dt.getMonth() + 1];
+      const year = dt.getFullYear() + 543;
+      const hour = String(dt.getHours()).padStart(2, '0');
+      const min = String(dt.getMinutes()).padStart(2, '0');
+
+      return `${dateLabel} ${day} ${month} ${year} เวลา ${hour}.${min} น.`;
+    }
+
+    function generateResult() {
+      let C_SocialVal = val("C_Social");
+      if (C_SocialVal === "อื่นๆ") {
+        C_SocialVal = val("C_SocialOther");
+      }
+
+      // ส่วนที่ปรับปรุง: ตัดคำนำหน้าชื่อเฉพาะตอนแสดงผลในตัวแปร displayName
+      const rawName = val("C_name");
+      const displayName = stripPrefix(rawName);
+
+      let msg = `ผู้ร้องชื่อ ${displayName} แจ้งพบเห็น ${C_SocialVal} ${val("C_Target")} ชื่อ ${val("C_Socialname")} URL : ${val("C_SocailURL")}\n\n`;
+
+      const reportType = document.querySelector('input[name="reportType"]:checked');
+
+      const policeType = (document.getElementById("policeType").value || "").trim();
+      const policeStation = val("policeStation");
+      const policeProvince = val("policeProvince");
+      const dP = document.getElementById("policeDate").value;
+      const tP = document.getElementById("policeTime").value;
+
+      const onlineNumber = val("onlineNumber");
+      const dO = document.getElementById("onlineDate").value;
+      const tO = document.getElementById("onlineTime").value;
+
+      if (reportType) {
+        if (reportType.value === "police") {
+          const isMetro = policeType === "สถานีตำรวจนครบาล";
+          const provinceText = isMetro ? ` ${policeProvince}` : ` จังหวัด ${policeProvince}`;
+          if (!policeType) {
+            msg += `ประกอบกับผู้ร้องดำเนินการติดต่อแจ้งความแล้วที่สถานีตำรวจภูธร ${policeStation} จังหวัด ${policeProvince} ${formatDateWithLabel(dP, tP, "วันที่")}\n\n`;
+          } else {
+            msg += `ประกอบกับผู้ร้องดำเนินการติดต่อแจ้งความแล้วที่${policeType}${policeStation}${provinceText} ${formatDateWithLabel(dP, tP, "วันที่")}\n\n`;
+          }
+        } else {
+          msg += `ประกอบกับผู้ร้องแจ้งความออนไลน์แล้วผ่าน www.thaipoliceonline.go.th เลขรับแจ้งความออนไลน์ ${onlineNumber} ${formatDateWithLabel(dO, tO, "วันที่แจ้งเหตุ")}\n\n`;
+        }
+      } else {
+        const policeLine = `(แจ้งความที่สถานีตำรวจ) ประกอบกับผู้ร้องดำเนินการติดต่อแจ้งความแล้วที่สถานีตำรวจภูธร ${policeStation} จังหวัด ${policeProvince} ${formatDateWithLabel(dP, tP, "วันที่")}`;
+        const onlineLine = `(แจ้งความออนไลน์) ประกอบกับผู้ร้องแจ้งความออนไลน์แล้วผ่าน www.thaipoliceonline.go.th เลขรับแจ้งความออนไลน์ ${onlineNumber} ${formatDateWithLabel(dO, tO, "วันที่แจ้งเหตุ")}`;
+        msg += policeLine + "\n" + onlineLine + "\n\n";
+      }
+
+      msg += `ความประสงค์ของผู้ร้องคือต้องการให้ปิดกั้นการเข้าถึง ${val("Q_Social")} ดังกล่าว`;
+      document.getElementById("result").innerText = msg;
+    }
+
+    function resetForm() {
+      if (confirm("คุณต้องการล้างข้อมูลฟอร์มทั้งหมดหรือไม่?")) {
+        document.querySelectorAll("input, select").forEach(el => {
+          if (el.type === "radio" || el.type === "checkbox") {
+            el.checked = false;
+          } else {
+            el.value = "";
+          }
+        });
+        document.getElementById("C_SocialOther").classList.add("hidden");
+        document.getElementById("policeSection").classList.add("hidden");
+        document.getElementById("onlineSection").classList.add("hidden");
+        document.getElementById("result").innerText = "";
+        const provinceField = document.getElementById("policeProvince");
+        provinceField.readOnly = false;
+        provinceField.style.backgroundColor = "";
+        provinceField.style.color = "";
+      }
+    }
+  </script>
+
+</body>
+</html>

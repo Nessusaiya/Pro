@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>แบบฟอร์มแจ้งพบเนื้อหาไม่เหมาะสม</title>
+<style>
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 20px;
+  background-color: #f4f4f4;
+  color: #333;
+}
+
+form {
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  max-width: 800px;
+  margin: 20px auto;
+}
+
+label {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+label span.label-text {
+  font-weight: 600;
+  color: #555;
+}
+
+input[type="text"],
+select {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+  transition: border-color 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+input[type="text"]:focus,
+select:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+/* ดีไซน์ใหม่สำหรับช่องที่แสดงผล Query */
+.query-display-box {
+  padding: 10px 0; /* เอาเส้นขอบออก ให้เหลือแต่ระยะห่าง */
+  font-size: 16px;
+  color: #007bff; /* ใช้สีน้ำเงินเพื่อให้รู้ว่าเป็นค่าที่ดึงมา */
+  font-weight: 600;
+  border-bottom: 2px dashed #ddd; /* ใส่เส้นประบางๆ ด้านล่างให้ดูมีมิติ */
+  display: inline-block;
+  min-width: 100px;
+}
+
+button {
+  background-color: #007bff;
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+  margin-top: 20px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+#result {
+  margin-top: 30px;
+  background-color: #e9ecef;
+  padding: 20px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+#clearButton {
+  background-color: #6c757d;
+  margin-left: 10px;
+}
+
+#clearButton:hover {
+  background-color: #5a6268;
+}
+
+.hidden {
+  display: none;
+}
+</style>
+</head>
+<body>
+
+<form id="reportForm">
+  <label><span class="label-text">ผู้ร้องชื่อ</span> 
+    <div style="display: flex; align-items: center;">
+      <input type="text" id="reporterName" name="reporterName" required>
+      <div style="display: flex; align-items: center; margin-left: 10px; white-space: nowrap;">
+        <input type="checkbox" id="anonymousCheckbox" style="width: auto; margin-right: 5px;"> 
+        <span style="font-weight: normal; color: #333;">ไม่ประสงค์ออกนาม</span>
+      </div>
+    </div>
+  </label>
+  
+  <label><span class="label-text">แจ้งพบเห็น</span> 
+    <select id="social" name="social" required>
+      <option value="">เลือกช่องทาง</option>
+      <option value="Facebook">Facebook</option>
+      <option value="X">X</option>
+      <option value="Instagram">Instagram</option>
+      <option value="YouTube">YouTube</option>
+      <option value="Line">Line</option>
+      <option value="Website">Website</option>
+      <option value="อื่นๆ">อื่นๆ</option>
+    </select>
+  </label>
+
+  <div id="otherSocialContainer" class="hidden">
+    <label><span class="label-text">กรอกช่องทางอื่นๆ</span> 
+      <input type="text" id="otherSocial" name="otherSocial" placeholder="ระบุช่องทางอื่น เช่น TikTok, Threads ฯลฯ">
+    </label>
+  </div>
+
+  <label><span class="label-text">ที่มีเนื้อหา</span> 
+    <select id="content" name="content" required>
+      <option value="">เลือกประเภทเนื้อหา</option>
+      <option value="การพนัน">การพนัน</option>
+      <option value="ลามกอนาจาร">ลามกอนาจาร</option>
+      <option value="หมิ่นเบื้องสูง">หมิ่นเบื้องสูง</option>
+      <option value="แอบอ้าง/ปลอมแปลงตัวตน">แอบอ้าง/ปลอมแปลงตัวตน</option>
+      <option value="อื่นๆ">อื่นๆ</option>
+    </select>
+  </label>
+
+  <div id="otherContentContainer" class="hidden">
+    <label><span class="label-text">ระบุเนื้อหาอื่นๆ</span> 
+      <input type="text" id="otherContent" name="otherContent" placeholder="โปรดระบุรายละเอียดเนื้อหา">
+    </label>
+  </div>
+
+  <label><span class="label-text">ชื่อ</span> <input type="text" id="contentName" name="contentName" required></label>
+  <label><span class="label-text">URL:</span> <input type="text" id="url" name="url" required></label>
+  
+  <label>
+    <span class="label-text">ผู้ร้องต้องการให้ปิดกั้นการเข้าถึง</span>
+    <div>
+      <span id="socialQueryDisplay" class="query-display-box">(โปรดเลือกช่องทางด้านบน)</span>
+      <span style="margin-left: 10px; font-weight: 600; color: #555;">ดังกล่าว</span>
+    </div>
+  </label>
+
+  <div>
+    <button type="button" onclick="submitForm()">สร้างข้อความร้องเรียน (ฟอร์ม 1)</button>
+    <button type="button" id="clearButton" onclick="clearForm()">เคลียร์ฟอร์ม</button>
+  </div>
+</form>
+
+<div id="result">
+  <b>ข้อมูลแสดงผล (ฟอร์ม 1):</b>
+</div>
+
+<script>
+// ฟังก์ชันสำหรับดึงค่า Social ปัจจุบัน
+function getCurrentSocial() {
+  const social = document.getElementById("social").value;
+  const otherSocial = document.getElementById("otherSocial").value;
+  if (social === "อื่นๆ" && otherSocial.trim() !== "") {
+    return otherSocial;
+  }
+  return social;
+}
+
+// อัปเดตการแสดงผลในหน้าฟอร์ม
+function syncSocialDisplay() {
+  const val = getCurrentSocial();
+  const display = document.getElementById("socialQueryDisplay");
+  if (val) {
+    display.innerText = val;
+    display.style.color = "#007bff";
+  } else {
+    display.innerText = "(โปรดเลือกช่องทางด้านบน)";
+    display.style.color = "#999";
+  }
+}
+
+function submitForm() {
+  const reporterName = document.getElementById("reporterName").value;
+  const social = getCurrentSocial() || "";
+  let content = document.getElementById("content").value;
+  const otherContent = document.getElementById("otherContent").value;
+  const contentName = document.getElementById("contentName").value;
+  const url = document.getElementById("url").value;
+
+  let displayName = reporterName;
+  if (reporterName && !document.getElementById("anonymousCheckbox").checked) {
+    displayName = reporterName.replace(/^(นาย|นางสาว|นาง|น\.ส\.|ด\.ช\.|ด\.ญ\.|ว่าที่\s?ร้อยตรี|ว่าที่\s?ร้อยโท|ว่าที่\s?ร้อยเอก|ว่าที่\s?ร\.ต\.|ว่าที่\s?ร\.ท\.|ว่าที่\s?ร\.อ\.)\s*/g, '').trim();
+  }
+
+  if (content === "อื่นๆ" && otherContent.trim() !== "") {
+    content = otherContent;
+  }
+
+  const resultDiv = document.getElementById("result");
+  // แสดงผลติดกันตามที่ต้องการ
+  resultDiv.innerHTML = `<b>ข้อมูลแสดงผล (ฟอร์ม 1):</b><br><br>ผู้ร้องชื่อ ${displayName} แจ้งพบเห็น ${social} ที่มีเนื้อหา${content} ชื่อ ${contentName} URL : ${url} ผู้ร้องต้องการให้ปิดกั้นการเข้าถึง ${social} ดังกล่าว`;
+}
+
+document.getElementById("social").addEventListener("change", function() {
+  const container = document.getElementById("otherSocialContainer");
+  const input = document.getElementById("otherSocial");
+  if (this.value === "อื่นๆ") {
+    container.classList.remove("hidden");
+    input.required = true;
+  } else {
+    container.classList.add("hidden");
+    input.required = false;
+    input.value = "";
+  }
+  syncSocialDisplay();
+});
+
+// อัปเดตทันทีที่พิมพ์ในช่องอื่นๆ
+document.getElementById("otherSocial").addEventListener("input", syncSocialDisplay);
+
+document.getElementById("content").addEventListener("change", function() {
+  const container = document.getElementById("otherContentContainer");
+  const input = document.getElementById("otherContent");
+  if (this.value === "อื่นๆ") {
+    container.classList.remove("hidden");
+    input.required = true;
+  } else {
+    container.classList.add("hidden");
+    input.required = false;
+    input.value = "";
+  }
+});
+
+document.getElementById("anonymousCheckbox").addEventListener("change", function() {
+  const nameInput = document.getElementById("reporterName");
+  if (this.checked) {
+    nameInput.value = "ไม่แจ้งชื่อ ไม่แจ้งนามสกุล";
+    nameInput.readOnly = true;
+    nameInput.style.backgroundColor = "#eee";
+  } else {
+    nameInput.value = "";
+    nameInput.readOnly = false;
+    nameInput.style.backgroundColor = "";
+  }
+});
+
+function clearForm() {
+  document.getElementById("reportForm").reset();
+  document.getElementById("result").innerHTML = "<b>ข้อมูลแสดงผล (ฟอร์ม 1):</b>";
+  document.getElementById("otherSocialContainer").classList.add("hidden");
+  document.getElementById("otherContentContainer").classList.add("hidden");
+  syncSocialDisplay();
+  const nameInput = document.getElementById("reporterName");
+  nameInput.readOnly = false;
+  nameInput.style.backgroundColor = "";
+}
+</script>
+
+</body>
+</html>

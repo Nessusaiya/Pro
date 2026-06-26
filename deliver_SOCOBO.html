@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>ใบนำส่ง สคบ.</title>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background: #f7fafc; }
+        .box { background: #fff; max-width: 800px; margin: 32px auto; padding: 36px 32px; border-radius: 20px; box-shadow: 0 8px 30px #0001; }
+        h2 { text-align:center; color: #e8950c; letter-spacing:1px; margin-bottom: 24px;}
+        .line { margin-bottom: 13px; }
+        .info-label {
+            font-weight: bold;
+            color: #d47b09;
+            display: inline-block;
+            min-width: 164px;
+        }
+        .btn-row { margin-bottom: 18px; display: flex; gap: 14px;}
+        .btn { padding: 10px 30px; border-radius: 8px; border: none; font-size: 1em; font-weight: bold; cursor: pointer;}
+        .btn-back { background: #d6bcfa; color: #444;}
+        .btn-print { background: #e8950c; color: #fff;}
+        @media (max-width:600px){
+            .box{padding:13px 4vw;}
+            .btn{padding: 10px 10px;}
+            .info-label { min-width: 95px;}
+        }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h2>ใบนำส่ง สคบ.</h2>
+    <div class="btn-row">
+        <button class="btn btn-back" onclick="window.location.href='index.html'">กลับหน้ารายการเคส</button>
+        <button class="btn btn-print" onclick="window.print()">พิมพ์หน้านี้</button>
+    </div>
+    <div id="deliver-area"></div>
+</div>
+<script>
+function escape(s) { return (s||"").replace(/[<>&"]/g, m=>({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[m])); }
+function safe(s) { return s && s.trim() !== "" ? escape(s) : "..."; }
+function renderDeliverSOCOBO() {
+    let data = {};
+    try { data = JSON.parse(localStorage.getItem("productFailCase") || "{}"); } catch {}
+
+    let detail = (localStorage.getItem("productFailCase_result") || "...");
+    detail = detail.replace(/\r?\n/g, " ").replace(/<br\s*\/?>/gi, " ").replace(/\s+/g, " ").trim();
+
+    // --- Query field ตามบรีฟ ---
+    const caseID = ".....*ไกด์แจ้งให้ตรวจสอบใน CRM เอง*";
+    const issueNo = ".....*ไกด์แจ้งให้ตรวจสอบใน CRM เอง*";
+    const complainant = safe(data.Complainant_Name);
+    const phone = safe(data.Complainant_Tel);
+    const contactChannel = ".....*ไกด์แจ้งให้ตรวจสอบใน CRM เอง*";
+    const address = safe(data.Complainant_Address);
+
+    const price = safe(data.Product_Price);
+    const priceText = safe(data.Product_Price_text);
+    let bankTarget = "";
+    if (data.EndBankType === "bank") {
+        bankTarget = `บัญชีธนาคาร ${safe(data.EndBank_Name)} ${safe(data.EndBank_UserName)} ${safe(data.EndBank_Number)}`;
+    } else if (data.EndBankType === "promptpay") {
+        bankTarget = `บัญชีพร้อมเพย์ หมายเลข ${safe(data.EndPromptPay_Number)} ชื่อบัญชี ${safe(data.EndPromptPay_UserName)}`;
+    } else {
+        bankTarget = "...";
+    }
+    const product = `${safe(data.Product_Name2)} จำนวน ${safe(data.Product_Qty)}`;
+    const channel = safe(data.Seller_Channel);
+    const sellerName = safe(data.Seller_Name);
+    const senderName = safe(data.Sender_Name);
+    const senderAddr = safe(data.Sender_Address);
+    const url = safe(data.Seller_URL);
+    const want = "ขอเงินคืน";
+
+    let html = "";
+    html += `<div class="line"><span class="info-label">Case ID:</span> ${caseID}</div>`;
+    html += `<div class="line"><span class="info-label">Issue No.:</span> ${issueNo}</div>`;
+    html += `<div class="line"><span class="info-label">ข้อมูลผู้ร้องเรียน:</span> ${complainant}</div>`;
+    html += `<div class="line"><span class="info-label">ช่องทางติดต่อ:</span> เบอร์โทรศัพท์ ${phone} และ ช่องทาง ${contactChannel}</div>`;
+    html += `<div class="line"><span class="info-label">ที่อยู่ผู้ร้องเรียน:</span> ${address}</div>`;
+    html += `<div class="line"><span class="info-label">จำนวนเงินที่ผู้ร้องชำระ:</span> ราคา ${price} บาท (${priceText}บาทถ้วน)</div>`;
+    html += `<div class="line"><span class="info-label">โอนไปที่ธนาคาร:</span> ${bankTarget}</div>`;
+    html += `<div class="line"><span class="info-label">ซื้อสินค้า:</span> ${product}</div>`;
+    html += `<div class="line"><span class="info-label">ซื้อผ่านช่องทาง:</span> ${channel} ชื่อ ${sellerName}</div>`;
+    html += `<div class="line"><span class="info-label">ข้อมูลผู้ขาย:</span> 1.ผู้จัดส่งชื่อ ${senderName} 2.ที่อยู่ผู้จัดส่ง ${senderAddr}</div>`;
+    html += `<div class="line"><span class="info-label">URL:</span> ${url}</div>`;
+    html += `<div class="line"><span class="info-label">ความประสงค์ของผู้ร้อง:</span> ${want}</div>`;
+    html += `<div class="line"><span class="info-label">รายละเอียดเรื่องร้องเรียน:</span> ${detail}</div>`;
+
+    document.getElementById("deliver-area").innerHTML = html;
+}
+window.addEventListener('DOMContentLoaded', renderDeliverSOCOBO);
+</script>
+</body>
+</html>

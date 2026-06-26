@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Outbound</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --bg: #0a0c12;
+    --surface: #111420;
+    --surface2: #181d2e;
+    --surface3: #1e2440;
+    --border: #252d45;
+    --border2: #2e3858;
+    --accent: #5b8dee;
+    --accent-glow: rgba(91,141,238,.18);
+    --accent2: #34d8a0;
+    --accent2-glow: rgba(52,216,160,.15);
+    --warn: #f06060;
+    --warn-glow: rgba(240,96,96,.15);
+    --text: #dde4f4;
+    --text2: #6b7a9e;
+    --text3: #8e9bbf;
+    --note-bg: #0d1018;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+    height: 100vh;
+    max-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  /* ── Header ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+  }
+
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 50%, transparent 100%);
+    opacity: .4;
+  }
+
+  header h1 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .85rem;
+    color: var(--accent);
+    letter-spacing: 4px;
+    font-weight: 600;
+  }
+
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent2);
+    box-shadow: 0 0 10px var(--accent2), 0 0 20px rgba(52,216,160,.4);
+    animation: pulse 2.5s ease infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .5; transform: scale(.85); }
+  }
+
+  /* ── Layout ── */
+  .main-layout {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .content-area {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* ── Category Selector ── */
+  .cat-selector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+  }
+
+  .cat-selector label {
+    font-size: .75rem;
+    color: var(--text2);
+    white-space: nowrap;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  select {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 14px;
+    padding: 8px 12px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color .2s, box-shadow .2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7a9e' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 32px;
+  }
+  select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+  select option { background: var(--surface2); }
+
+  /* ── Import Panel ── */
+  .import-panel {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-top: 2px solid var(--accent2);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .import-panel::before { display: none; }
+
+  .import-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .import-panel-title {
+    font-size: .72rem;
+    font-weight: 600;
+    color: var(--accent2);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .import-hint {
+    font-size: .72rem;
+    color: var(--text2);
+    line-height: 1.4;
+  }
+
+  .import-panel textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    font-size: .85rem;
+    line-height: 1.6;
+    padding: 10px 12px;
+    resize: vertical;
+    min-height: 64px;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+    width: 100%;
+  }
+  .import-panel textarea:focus { border-color: var(--accent2); box-shadow: 0 0 0 3px var(--accent2-glow); }
+  .import-panel textarea::placeholder { color: var(--text2); font-size: .8rem; }
+
+  /* ── Form Card ── */
+  .form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .form-card::before { display: none; }
+
+  .form-card h2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .75rem;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .form-card h2::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 14px;
+    background: var(--accent);
+    border-radius: 2px;
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  /* ── Field ── */
+  .field-row {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .field-row label {
+    font-size: .72rem;
+    color: var(--text2);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  textarea.field-ta {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 14px;
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+    width: 100%;
+  }
+  input:focus, textarea.field-ta:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  input::placeholder, textarea::placeholder { color: var(--text2); }
+
+  textarea.field-ta { min-height: 68px; resize: vertical; line-height: 1.6; }
+
+  .input-with-btn { display: flex; gap: 6px; }
+  .input-with-btn input { flex: 1; }
+
+  /* ── Radio ── */
+  .radio-group { display: flex; gap: 8px; }
+
+  .radio-group input[type="radio"] { display: none; }
+
+  .radio-group label {
+    flex: 1;
+    text-align: center;
+    cursor: pointer;
+    font-size: .85rem;
+    font-weight: 600;
+    padding: 9px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    transition: all .2s;
+    color: var(--text2);
+    user-select: none;
+  }
+
+  .radio-group label:hover { border-color: var(--border2); color: var(--text3); }
+
+  .radio-group label.active-connected,
+  label.active-connected {
+    border-color: var(--accent2) !important;
+    color: var(--accent2) !important;
+    background: var(--accent2-glow) !important;
+    box-shadow: 0 0 0 1px var(--accent2) !important;
+  }
+
+  .radio-group label.active-notconnected,
+  label.active-notconnected {
+    border-color: var(--warn) !important;
+    color: var(--warn) !important;
+    background: var(--warn-glow) !important;
+    box-shadow: 0 0 0 1px var(--warn) !important;
+  }
+
+  /* ── Checkbox Group ── */
+  .cat-group {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .cat-group-title {
+    font-size: .7rem;
+    font-weight: 700;
+    color: var(--accent2);
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cb-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: .88rem;
+    color: var(--text2);
+    padding: 2px 0;
+    transition: color .15s;
+  }
+  .cb-item:hover { color: var(--text); }
+  .cb-item input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 14px; height: 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .cb-item input:checked + span { color: var(--text); }
+
+  /* ── Tab Buttons ── */
+  .tab-row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .tab-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text2);
+    font-family: 'Sarabun', sans-serif;
+    font-size: .82rem;
+    font-weight: 500;
+    padding: 5px 14px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .tab-btn:hover { border-color: var(--border2); color: var(--text3); }
+  .tab-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 2px 10px rgba(91,141,238,.35);
+  }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: #fff;
+    font-family: 'Sarabun', sans-serif;
+    font-size: .9rem;
+    font-weight: 700;
+    padding: 10px 24px;
+    cursor: pointer;
+    transition: all .2s;
+    align-self: flex-start;
+    letter-spacing: .3px;
+    box-shadow: 0 3px 12px rgba(91,141,238,.3);
+  }
+  .btn-primary:hover {
+    background: #4a7de0;
+    transform: translateY(-1px);
+    box-shadow: 0 5px 18px rgba(91,141,238,.45);
+  }
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--accent2);
+    border-radius: var(--radius-sm);
+    color: var(--accent2);
+    font-family: 'Sarabun', sans-serif;
+    font-size: .85rem;
+    font-weight: 600;
+    padding: 8px 18px;
+    cursor: pointer;
+    transition: all .2s;
+    align-self: flex-start;
+  }
+  .btn-secondary:hover { background: var(--accent2); color: var(--bg); }
+
+  .btn-now {
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--accent2);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .68rem;
+    font-weight: 600;
+    padding: 0 10px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .2s;
+    letter-spacing: .5px;
+  }
+  .btn-now:hover { background: var(--accent2); color: var(--bg); border-color: var(--accent2); }
+
+  .btn-select-all {
+    background: transparent;
+    border: 1px solid var(--accent2);
+    border-radius: 4px;
+    color: var(--accent2);
+    font-family: 'Sarabun', sans-serif;
+    font-size: .7rem;
+    font-weight: 600;
+    padding: 2px 10px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .btn-select-all:hover { background: var(--accent2); color: var(--bg); }
+
+  .btn-import {
+    background: var(--accent2);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--bg);
+    font-family: 'Sarabun', sans-serif;
+    font-size: .85rem;
+    font-weight: 700;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: all .2s;
+    box-shadow: 0 2px 10px var(--accent2-glow);
+  }
+  .btn-import:hover { background: #28c490; transform: translateY(-1px); }
+
+  .btn-clear-import {
+    background: transparent;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--text2);
+    font-family: 'Sarabun', sans-serif;
+    font-size: .82rem;
+    font-weight: 600;
+    padding: 9px 14px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .btn-clear-import:hover { border-color: var(--warn); color: var(--warn); }
+
+  .btn-clear-memo {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text2);
+    font-family: 'Sarabun', sans-serif;
+    font-size: .68rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    cursor: pointer;
+    transition: all .2s;
+    white-space: nowrap;
+  }
+  .btn-clear-memo:hover { border-color: var(--warn); color: var(--warn); }
+
+  /* ── Float Reset ── */
+  .btn-float-reset {
+    position: fixed;
+    bottom: 22px;
+    right: 284px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    color: var(--text2);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .72rem;
+    font-weight: 600;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all .2s;
+    z-index: 200;
+    box-shadow: 0 4px 20px rgba(0,0,0,.5);
+    letter-spacing: .5px;
+  }
+  .btn-float-reset:hover {
+    background: var(--warn-glow);
+    border-color: var(--warn);
+    color: var(--warn);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(240,96,96,.25);
+  }
+
+  /* ── Divider ── */
+  .divider {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border2), transparent);
+    margin: 2px 0;
+  }
+
+  /* ── Output Card ── */
+  .output-card {
+    background: rgba(91,141,238,.04);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    padding: 40px 16px 16px;
+    font-size: .88rem;
+    line-height: 1.85;
+    color: var(--text);
+    position: relative;
+    font-family: 'JetBrains Mono', monospace;
+    word-break: break-all;
+  }
+
+  .output-card .btn-row {
+    position: absolute;
+    top: 10px; right: 10px;
+    display: flex;
+    gap: 5px;
+  }
+
+  .output-card .copy-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    color: var(--accent);
+    font-family: 'Sarabun', sans-serif;
+    font-size: .75rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .output-card .copy-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .output-card .memo-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    color: var(--accent2);
+    font-family: 'Sarabun', sans-serif;
+    font-size: .75rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .output-card .memo-btn:hover { background: var(--accent2); color: var(--bg); border-color: var(--accent2); }
+
+  /* ── Sub Card ── */
+  .sub-card {
+    background: rgba(52,216,160,.03);
+    border: 1px solid var(--accent2);
+    border-top: 2px solid var(--accent2);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .sub-card::before { display: none; }
+
+  .sub-card h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .72rem;
+    color: var(--accent2);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sub-card h3::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 13px;
+    background: var(--accent2);
+    border-radius: 2px;
+    box-shadow: 0 0 8px var(--accent2);
+  }
+
+  /* ── Note Panel ── */
+  .note-panel {
+    width: 256px;
+    min-width: 256px;
+    background: var(--note-bg);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 14px;
+    gap: 10px;
+    min-height: 0;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .note-panel h3 {
+    font-size: .7rem;
+    color: var(--text2);
+    letter-spacing: 1.5px;
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .note-panel textarea {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'Sarabun', sans-serif;
+    font-size: .85rem;
+    line-height: 1.7;
+    padding: 10px 12px;
+    resize: none;
+    outline: none;
+    transition: border-color .2s;
+    overflow-y: auto;
+  }
+  .note-panel textarea:focus { border-color: var(--accent); }
+
+  /* ── Toast ── */
+  .copied-toast {
+    position: fixed;
+    bottom: 22px;
+    right: 272px;
+    color: var(--bg);
+    font-family: 'Sarabun', sans-serif;
+    font-size: .82rem;
+    font-weight: 700;
+    padding: 9px 18px;
+    border-radius: 20px;
+    opacity: 0;
+    transition: opacity .25s, transform .25s;
+    pointer-events: none;
+    z-index: 999;
+    transform: translateY(6px);
+  }
+  .copied-toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ── Misc ── */
+  .hidden { display: none !important; }
+  .cond-fields { display: flex; flex-direction: column; gap: 12px; }
+</style>
+<body>
+
+<header>
+  <div class="dot"></div>
+  <h1>OUTBOUND</h1>
+</header>
+
+<div class="main-layout">
+  <div class="content-area">
+
+    <div class="cat-selector">
+      <label>หมวดหมู่</label>
+      <select id="mainCat" onchange="switchCat()">
+        <option value="">-- เลือกหมวดหมู่ --</option>
+        <option value="callback">ติดต่อกลับผู้ร้อง</option>
+        <option value="docs">ติดตามเอกสารผู้ร้อง</option>
+        <option value="shop">ติดต่อเจรจาร้านค้า</option>
+      </select>
+    </div>
+
+    <!-- Import / Reverse parse panel -->
+    <div class="import-panel">
+      <div class="import-panel-header">
+        <div class="import-panel-title">↩ นำเข้าเท็มเพลต</div>
+        <span class="import-hint">วางข้อความ output ที่มี <strong style="color:var(--accent2)">//</strong> นำหน้า แล้วกด "นำเข้า"</span>
+      </div>
+      <textarea id="import-ta" placeholder="วางเท็มเพลตที่นี่ เช่น //ติดต่อกลับผู้ร้อง อ้างอิง WO1234567 (ครั้งที่ 1) วันที่ ..."></textarea>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn-import" onclick="doImport()">↩ นำเข้าและเติมข้อมูล</button>
+        <button class="btn-clear-import" onclick="document.getElementById('import-ta').value=''">✕ ลบข้อความ</button>
+      </div>
+    </div>
+
+    <!-- ===== 1: ติดต่อกลับผู้ร้อง ===== -->
+    <div id="sec-callback" class="hidden">
+      <div class="form-card">
+        <h2>ติดต่อกลับผู้ร้อง</h2>
+
+        <div class="grid-2">
+          <div class="field-row">
+            <label>เลขรับเรื่อง WO</label>
+            <input type="text" id="cb-wo" placeholder="WO1234567 หรือ 1234567">
+          </div>
+          <div class="field-row">
+            <label>ครั้งที่</label>
+            <input type="number" id="cb-round" min="1" placeholder="1">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <label>ชื่อ-นามสกุล ผู้ร้องเรียน</label>
+          <input type="text" id="cb-name" placeholder="ชื่อ นามสกุล">
+        </div>
+
+        <div class="field-row">
+          <label>หมายเลขโทรศัพท์ผู้ร้อง</label>
+          <input type="text" id="cb-phone" placeholder="0812345678">
+        </div>
+
+        <div class="grid-2">
+          <div class="field-row">
+            <label>วันที่</label>
+            <div class="input-with-btn">
+              <input type="text" id="cb-date" placeholder="19 กุมภาพันธ์ 2569" readonly>
+              <button class="btn-now" onclick="setDate('cb-date')">วันนี้</button>
+            </div>
+          </div>
+          <div class="field-row">
+            <label>เวลา</label>
+            <div class="input-with-btn">
+              <input type="text" id="cb-time" placeholder="10.02">
+              <button class="btn-now" onclick="setTime('cb-time')">ตอนนี้</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <label>วัตถุประสงค์การติดต่อ</label>
+          <select id="cb-purpose" onchange="cbPurposeChange()">
+            <option value="">-- เลือก --</option>
+            <option value="info">เพื่อสอบถามข้อมูลเพิ่มเติม</option>
+            <option value="notify">เพื่อแจ้งข้อมูล</option>
+            <option value="doctrack">เพื่อติดตามเอกสารเพิ่มเติม</option>
+          </select>
+        </div>
+
+        <div id="cb-info-field" class="field-row hidden">
+          <label>รายละเอียด</label>
+          <textarea class="field-ta" id="cb-info-text" placeholder="ระบุรายละเอียด..."></textarea>
+        </div>
+
+        <!-- Doc tracking checkboxes -->
+        <div id="cb-doctrack-field" class="hidden" style="display:flex;flex-direction:column;gap:10px">
+          <div class="tab-row">
+            <button class="tab-btn active" onclick="setDocTab('cb','buy',this)">ซื้อขาย</button>
+            <button class="tab-btn" onclick="setDocTab('cb','invest',this)">หลอกลงทุน</button>
+            <button class="tab-btn" onclick="setDocTab('cb','parcel',this)">หลอกลวงพัสดุ</button>
+          </div>
+          <div id="cb-docs-buy" class="cat-group">
+            <div class="cat-group-title">ซื้อขาย<button class="btn-select-all" onclick="toggleAll('cb-buy',this)">เลือกทั้งหมด</button></div>
+            <label class="cb-item"><input type="checkbox" data-group="cb-buy" data-text="ภาพถ่ายบัตรประชาชนผู้ร้อง"><span>ภาพถ่ายบัตรประชาชนผู้ร้อง</span></label>
+            <label class="cb-item"><input type="checkbox" data-group="cb-buy" data-text="ช่องทางการติดต่อผู้ขาย URL หรือ ID ร้านค้า"><span>ช่องทางการติดต่อผู้ขาย URL หรือ ID ร้านค้า</span></label>
+            <label class="cb-item"><input type="checkbox" data-group="cb-buy" data-text="หลักฐานการชำระเงิน"><span>หลักฐานการชำระเงิน</span></label>
+            <label class="cb-item"><input type="checkbox" data-group="cb-buy" data-text="หลักฐานการสนทนาระหว่างผู้ซื้อและผู้จำหน่าย"><span>หลักฐานการสนทนาระหว่างผู้ซื้อและผู้จำหน่าย</span></label>
+            <label class="cb-item"><input type="checkbox" data-group="cb-buy" data-text="หลักฐานการโพสต์จำหน่ายสินค้า"><span>หลักฐานการโพสต์จำหน่ายสินค้า</span></label>
+            <label class="cb-item"><input type="checkbox" data-group="cb-buy" data-text="หลักฐานการแจ้งความ"><span>หลักฐานการแจ้งความ</span></label>
+            <label class="cb-item"><input type="checkbox" data-group="cb-buy" data-text="ภาพถ่ายสินค้าที่ได้รับ"><span>ภาพถ่ายสินค้าที่ได้รับ</span></label>
+            <label class="cb-item"><input type="checkbox" data-group="cb-buy" data-text="ภาพถ่ายหน้ากล่อง"><span>ภาพถ่ายหน้ากล่อง</span></label>
+          </div>
+          <div id="cb-docs-invest" class="cat-group hidden">
+            <div class="cat-group-title">หลอกลงทุน<button class="btn-select-all" onclick="toggleAll('cb-invest',this)">เลือกทั้งหมด</button></div>
+            <label class="cb-item"><input type="checkbox" data-group="cb-invest" data-text="ภาพถ่ายบัตรประชาชนผู้ร้อง"><span>ภาพถ่ายบัตรประชาชนผู้ร้อง</span></label>
+            <label class="cb-item"><input type="checkbox" data-group="cb-invest" data-text="รายละเอียดผู้ถูกร้องทุกข์ เช่น ชื่อ-สกุล, เบอร์โทรศัพท์, หมายเลขบัญชีธนาคาร"><span>รายละเอียดผู้ถูกร้องทุกข์</span></label>
+            <label class="cb-item"><input type="checkbox" data-group="cb-invest" data-text="URL และภาพโปรไฟล์ Website หรือ เพจ ดังกล่าว"><span>URL และภาพโปรไฟล์ Website หรือ เพจ</span></label>
+            <label class="cb-item"><input type="checkbox" data-group="cb-invest" data-text="หลักฐานต้นโพสต์กรณีหลอกลวง (ถ้ามี)"><span>หลักฐานต้นโพสต์กรณีหลอกลวง (ถ้ามี)</span></label>
+            <label class="cb-item"><input type="checkbox" data-group="cb-invest" data-text="หลักฐานการชำระเงิน"><span>หลักฐานการชำระเงิน</span></label>
+            <label class="cb-item"><input type="checkbox" data-group="cb-invest" data-text="หลักฐานการสนทนา ตั้งแต่มีการติดต่อ จนถึงการติดตามเรื่อง"><span>หลักฐานการสนทนา ตั้งแต่ติดต่อถึงติดตามเรื่อง</span></label>
+            <label class="cb-item"><input type="checkbox" data-group="cb-invest" data-text="หลักฐานการแจ้งความ"><span>หลักฐานการแจ้งความ</span></label>
+          </div>
+          <div id="cb-docs-parcel" class="cat-group hidden">
+            <div class="cat-group-title">หลอกลวงพัสดุ<button class="btn-select-all" onclick="toggleAll('cb-parcel',this)">เลือกทั้งหมด</button></div>
+            <label class="cb-item"><input type="checkbox" data-group="cb-parcel" data-text="หลักฐานบัตรประจำตัวประชาชน"><span>หลักฐานบัตรประจำตัวประชาชน</span></label>
+            <label class="cb-item"><input type="checkbox" data-group="cb-parcel" data-text="หลักฐานการชำระเงิน"><span>หลักฐานการชำระเงิน</span></label>
+            <label class="cb-item"><input type="checkbox" data-group="cb-parcel" data-text="หลักฐานภาพถ่ายหน้ากล่องพัสดุ"><span>หลักฐานภาพถ่ายหน้ากล่องพัสดุ</span></label>
+            <label class="cb-item"><input type="checkbox" data-group="cb-parcel" data-text="หลักฐานการแจ้งความ"><span>หลักฐานการแจ้งความ</span></label>
+            <label class="cb-item"><input type="checkbox" data-group="cb-parcel" data-text="หลักฐานภาพถ่ายสินค้าที่ได้รับ"><span>หลักฐานภาพถ่ายสินค้าที่ได้รับ</span></label>
+            <label class="cb-item"><input type="checkbox" data-group="cb-parcel" data-text="หลักฐานใบมอบอำนาจ (หากมี)"><span>หลักฐานใบมอบอำนาจ (หากมี)</span></label>
+            <label class="cb-item"><input type="checkbox" data-group="cb-parcel" data-text="หลักฐานภาพถ่ายบัตรประจำตัวประชาชนผู้มอบอำนาจ (หากมี)"><span>หลักฐานภาพถ่ายบัตรฯ ผู้มอบอำนาจ (หากมี)</span></label>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <div class="field-row">
+          <label>ผลการโทร</label>
+          <div class="radio-group">
+            <label id="cb-lbl-c" onclick="setRadio('cb','c')"><input type="radio" name="cb-r" value="c"> โทรติด</label>
+            <label id="cb-lbl-n" onclick="setRadio('cb','n')"><input type="radio" name="cb-r" value="n"> โทรไม่ติด</label>
+          </div>
+        </div>
+
+        <div id="cb-c-fields" class="cond-fields hidden">
+          <div class="field-row">
+            <label>ให้ข้อมูลว่า</label>
+            <textarea class="field-ta" id="cb-given-info" placeholder="ระบุข้อมูลที่ผู้ร้องให้..."></textarea>
+          </div>
+        </div>
+        <div id="cb-n-fields" class="cond-fields hidden">
+          <div class="field-row">
+            <label>เสียงสัญญาณ</label>
+            <input type="text" id="cb-signal" placeholder="เช่น ดัง / ไม่มีสัญญาณ / ไม่รับสาย">
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="gen('callback')">แสดงผล</button>
+
+        <div id="cb-out" class="hidden">
+          <div class="output-card">
+            <div class="btn-row">
+              <button class="memo-btn" onclick="toMemo('cb-out-txt')">→ Memo</button>
+              <button class="copy-btn" onclick="doCopy('cb-out-txt')">คัดลอก</button>
+            </div>
+            <p id="cb-out-txt"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 2: ติดตามเอกสาร ===== -->
+    <div id="sec-docs" class="hidden">
+      <div class="form-card">
+        <h2>ติดตามเอกสารผู้ร้อง</h2>
+
+        <div class="grid-2">
+          <div class="field-row">
+            <label>เลขรับเรื่อง WO</label>
+            <input type="text" id="doc-wo" placeholder="WO1234567 หรือ 1234567">
+          </div>
+          <div class="field-row">
+            <label>ครั้งที่</label>
+            <input type="number" id="doc-round" min="1" placeholder="1">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <label>ชื่อ-นามสกุล ผู้ร้องเรียน</label>
+          <input type="text" id="doc-name" placeholder="ชื่อ นามสกุล">
+        </div>
+
+        <div class="field-row">
+          <label>หมายเลขโทรศัพท์ผู้ร้อง</label>
+          <input type="text" id="doc-phone" placeholder="0812345678">
+        </div>
+
+        <div class="grid-2">
+          <div class="field-row">
+            <label>วันที่</label>
+            <div class="input-with-btn">
+              <input type="text" id="doc-date" placeholder="19 กุมภาพันธ์ 2569" readonly>
+              <button class="btn-now" onclick="setDate('doc-date')">วันนี้</button>
+            </div>
+          </div>
+          <div class="field-row">
+            <label>เวลา</label>
+            <div class="input-with-btn">
+              <input type="text" id="doc-time" placeholder="10.02">
+              <button class="btn-now" onclick="setTime('doc-time')">ตอนนี้</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <label>เพื่อติดตามเอกสารหลักฐาน — เลือกหมวด</label>
+          <div class="tab-row">
+            <button class="tab-btn active" onclick="setDocTab('doc','buy',this)">ซื้อขาย</button>
+            <button class="tab-btn" onclick="setDocTab('doc','invest',this)">หลอกลงทุน</button>
+            <button class="tab-btn" onclick="setDocTab('doc','parcel',this)">หลอกลวงพัสดุ</button>
+          </div>
+        </div>
+
+        <div id="doc-docs-buy" class="cat-group">
+          <div class="cat-group-title">ซื้อขาย<button class="btn-select-all" onclick="toggleAll('doc-buy',this)">เลือกทั้งหมด</button></div>
+          <label class="cb-item"><input type="checkbox" data-group="doc-buy" data-text="ภาพถ่ายบัตรประชาชนผู้ร้อง"><span>ภาพถ่ายบัตรประชาชนผู้ร้อง</span></label>
+          <label class="cb-item"><input type="checkbox" data-group="doc-buy" data-text="ช่องทางการติดต่อผู้ขาย URL หรือ ID ร้านค้า"><span>ช่องทางการติดต่อผู้ขาย URL หรือ ID ร้านค้า</span></label>
+          <label class="cb-item"><input type="checkbox" data-group="doc-buy" data-text="หลักฐานการชำระเงิน"><span>หลักฐานการชำระเงิน</span></label>
+          <label class="cb-item"><input type="checkbox" data-group="doc-buy" data-text="หลักฐานการสนทนาระหว่างผู้ซื้อและผู้จำหน่าย"><span>หลักฐานการสนทนาระหว่างผู้ซื้อและผู้จำหน่าย</span></label>
+          <label class="cb-item"><input type="checkbox" data-group="doc-buy" data-text="หลักฐานการโพสต์จำหน่ายสินค้า"><span>หลักฐานการโพสต์จำหน่ายสินค้า</span></label>
+          <label class="cb-item"><input type="checkbox" data-group="doc-buy" data-text="หลักฐานการแจ้งความ"><span>หลักฐานการแจ้งความ</span></label>
+          <label class="cb-item"><input type="checkbox" data-group="doc-buy" data-text="ภาพถ่ายสินค้าที่ได้รับ"><span>ภาพถ่ายสินค้าที่ได้รับ</span></label>
+          <label class="cb-item"><input type="checkbox" data-group="doc-buy" data-text="ภาพถ่ายหน้ากล่อง"><span>ภาพถ่ายหน้ากล่อง</span></label>
+        </div>
+        <div id="doc-docs-invest" class="cat-group hidden">
+          <div class="cat-group-title">หลอกลงทุน<button class="btn-select-all" onclick="toggleAll('doc-invest',this)">เลือกทั้งหมด</button></div>
+          <label class="cb-item"><input type="checkbox" data-group="doc-invest" data-text="ภาพถ่ายบัตรประชาชนผู้ร้อง"><span>ภาพถ่ายบัตรประชาชนผู้ร้อง</span></label>
+          <label class="cb-item"><input type="checkbox" data-group="doc-invest" data-text="รายละเอียดผู้ถูกร้องทุกข์ เช่น ชื่อ-สกุล, เบอร์โทรศัพท์, หมายเลขบัญชีธนาคาร"><span>รายละเอียดผู้ถูกร้องทุกข์</span></label>
+          <label class="cb-item"><input type="checkbox" data-group="doc-invest" data-text="URL และภาพโปรไฟล์ Website หรือ เพจ ดังกล่าว"><span>URL และภาพโปรไฟล์ Website หรือ เพจ</span></label>
+          <label class="cb-item"><input type="checkbox" data-group="doc-invest" data-text="หลักฐานต้นโพสต์กรณีหลอกลวง (ถ้ามี)"><span>หลักฐานต้นโพสต์กรณีหลอกลวง (ถ้ามี)</span></label>
+          <label class="cb-item"><input type="checkbox" data-group="doc-invest" data-text="หลักฐานการชำระเงิน"><span>หลักฐานการชำระเงิน</span></label>
+          <label class="cb-item"><input type="checkbox" data-group="doc-invest" data-text="หลักฐานการสนทนา ตั้งแต่มีการติดต่อ จนถึงการติดตามเรื่อง"><span>หลักฐานการสนทนา ตั้งแต่ติดต่อถึงติดตามเรื่อง</span></label>
+          <label class="cb-item"><input type="checkbox" data-group="doc-invest" data-text="หลักฐานการแจ้งความ"><span>หลักฐานการแจ้งความ</span></label>
+        </div>
+        <div id="doc-docs-parcel" class="cat-group hidden">
+          <div class="cat-group-title">หลอกลวงพัสดุ<button class="btn-select-all" onclick="toggleAll('doc-parcel',this)">เลือกทั้งหมด</button></div>
+          <label class="cb-item"><input type="checkbox" data-group="doc-parcel" data-text="หลักฐานบัตรประจำตัวประชาชน"><span>หลักฐานบัตรประจำตัวประชาชน</span></label>
+          <label class="cb-item"><input type="checkbox" data-group="doc-parcel" data-text="หลักฐานการชำระเงิน"><span>หลักฐานการชำระเงิน</span></label>
+          <label class="cb-item"><input type="checkbox" data-group="doc-parcel" data-text="หลักฐานภาพถ่ายหน้ากล่องพัสดุ"><span>หลักฐานภาพถ่ายหน้ากล่องพัสดุ</span></label>
+          <label class="cb-item"><input type="checkbox" data-group="doc-parcel" data-text="หลักฐานการแจ้งความ"><span>หลักฐานการแจ้งความ</span></label>
+          <label class="cb-item"><input type="checkbox" data-group="doc-parcel" data-text="หลักฐานภาพถ่ายสินค้าที่ได้รับ"><span>หลักฐานภาพถ่ายสินค้าที่ได้รับ</span></label>
+          <label class="cb-item"><input type="checkbox" data-group="doc-parcel" data-text="หลักฐานใบมอบอำนาจ (หากมี)"><span>หลักฐานใบมอบอำนาจ (หากมี)</span></label>
+          <label class="cb-item"><input type="checkbox" data-group="doc-parcel" data-text="หลักฐานภาพถ่ายบัตรประจำตัวประชาชนผู้มอบอำนาจ (หากมี)"><span>หลักฐานภาพถ่ายบัตรฯ ผู้มอบอำนาจ (หากมี)</span></label>
+        </div>
+
+        <hr class="divider">
+
+        <div class="field-row">
+          <label>ผลการโทร</label>
+          <div class="radio-group">
+            <label id="doc-lbl-c" onclick="setRadio('doc','c')"><input type="radio" name="doc-r" value="c"> โทรติด</label>
+            <label id="doc-lbl-n" onclick="setRadio('doc','n')"><input type="radio" name="doc-r" value="n"> โทรไม่ติด</label>
+          </div>
+        </div>
+
+        <div id="doc-c-fields" class="cond-fields hidden">
+          <div class="field-row">
+            <label>ให้ข้อมูลว่า</label>
+            <textarea class="field-ta" id="doc-given-info" placeholder="ระบุข้อมูลที่ผู้ร้องให้..."></textarea>
+          </div>
+        </div>
+        <div id="doc-n-fields" class="cond-fields hidden">
+          <div class="field-row">
+            <label>เสียงสัญญาณ</label>
+            <input type="text" id="doc-signal" placeholder="เช่น ดัง / ไม่มีสัญญาณ / ไม่รับสาย">
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="gen('docs')">แสดงผล</button>
+
+        <div id="doc-out" class="hidden">
+          <div class="output-card">
+            <div class="btn-row">
+              <button class="memo-btn" onclick="toMemo('doc-out-txt')">→ Memo</button>
+              <button class="copy-btn" onclick="doCopy('doc-out-txt')">คัดลอก</button>
+            </div>
+            <p id="doc-out-txt"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 3: ติดต่อเจรจาร้านค้า ===== -->
+    <div id="sec-shop" class="hidden">
+      <div class="form-card">
+        <h2>ติดต่อเจรจาร้านค้า</h2>
+
+        <div class="grid-2">
+          <div class="field-row">
+            <label>เลขรับเรื่อง WO</label>
+            <input type="text" id="sh-wo" placeholder="WO1234567 หรือ 1234567">
+          </div>
+          <div class="field-row">
+            <label>ครั้งที่</label>
+            <input type="number" id="sh-round" min="1" placeholder="1">
+          </div>
+        </div>
+
+        <div class="field-row">
+          <label>หมายเลขโทรศัพท์ร้านค้า</label>
+          <input type="text" id="sh-phone" placeholder="0812345678">
+        </div>
+
+        <div class="grid-2">
+          <div class="field-row">
+            <label>วันที่</label>
+            <div class="input-with-btn">
+              <input type="text" id="sh-date" placeholder="19 กุมภาพันธ์ 2569" readonly>
+              <button class="btn-now" onclick="setDate('sh-date')">วันนี้</button>
+            </div>
+          </div>
+          <div class="field-row">
+            <label>เวลา</label>
+            <div class="input-with-btn">
+              <input type="text" id="sh-time" placeholder="10.02">
+              <button class="btn-now" onclick="setTime('sh-time')">ตอนนี้</button>
+            </div>
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <div class="field-row">
+          <label>ผลการโทร</label>
+          <div class="radio-group">
+            <label id="sh-lbl-c" onclick="setRadio('sh','c')"><input type="radio" name="sh-r" value="c"> โทรติด</label>
+            <label id="sh-lbl-n" onclick="setRadio('sh','n')"><input type="radio" name="sh-r" value="n"> โทรไม่ติด</label>
+          </div>
+        </div>
+
+        <div id="sh-c-fields" class="cond-fields hidden">
+          <div class="field-row">
+            <label>ให้ข้อมูลว่า</label>
+            <textarea class="field-ta" id="sh-given-info" placeholder="ระบุข้อมูลที่ร้านค้าให้..."></textarea>
+          </div>
+        </div>
+        <div id="sh-n-fields" class="cond-fields hidden">
+          <div class="field-row">
+            <label>เสียงสัญญาณ</label>
+            <input type="text" id="sh-signal" placeholder="เช่น ดัง / ไม่มีสัญญาณ / ไม่รับสาย">
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="gen('shop')">แสดงผล</button>
+
+        <div id="sh-out" class="hidden">
+          <div class="output-card">
+            <div class="btn-row">
+              <button class="memo-btn" onclick="toMemo('sh-out-txt')">→ Memo</button>
+              <button class="copy-btn" onclick="doCopy('sh-out-txt')">คัดลอก</button>
+            </div>
+            <p id="sh-out-txt"></p>
+          </div>
+        </div>
+
+        <!-- Notify section trigger -->
+        <div id="sh-notify-wrap" class="hidden">
+          <button class="btn-secondary" onclick="toggleNotify()">+ แจ้งติดต่อกลับผู้ร้องเรียน</button>
+        </div>
+
+        <!-- Sub-form: แจ้งผลกลับผู้ร้อง -->
+        <div id="sh-notify-sec" class="sub-card hidden">
+          <h3>แจ้งผลกลับผู้ร้องเรียน</h3>
+
+          <div class="grid-2">
+            <div class="field-row">
+              <label>เลขรับเรื่อง (auto)</label>
+              <input type="text" id="shn-wo" readonly style="opacity:.65">
+            </div>
+            <div class="field-row">
+              <label>วันที่ (auto)</label>
+              <input type="text" id="shn-date" readonly style="opacity:.65">
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label>ชื่อ-นามสกุล ผู้ร้องเรียน</label>
+            <input type="text" id="shn-name" placeholder="ชื่อ นามสกุล">
+          </div>
+
+          <div class="field-row">
+            <label>หมายเลขโทรศัพท์ผู้ร้อง</label>
+            <input type="text" id="shn-phone" placeholder="0812345678">
+          </div>
+
+          <div class="field-row">
+            <label>เวลา (โทรออกใหม่)</label>
+            <div class="input-with-btn">
+              <input type="text" id="shn-time" placeholder="10.02">
+              <button class="btn-now" onclick="setTime('shn-time')">ตอนนี้</button>
+            </div>
+          </div>
+
+          <!-- แจ้งผลการเจรจา = auto-filled from sh-given-info, but editable -->
+          <div class="field-row">
+            <label>แจ้งผลการเจรจา (ดึงจากข้อมูลร้านค้า — แก้ไขได้)</label>
+            <textarea class="field-ta" id="shn-result" placeholder="ผลการเจรจาจากร้านค้า..."></textarea>
+          </div>
+
+          <div class="field-row">
+            <label>ผลการโทร</label>
+            <div class="radio-group">
+              <label id="shn-lbl-c" onclick="setRadio('shn','c')"><input type="radio" name="shn-r" value="c"> โทรติด</label>
+              <label id="shn-lbl-n" onclick="setRadio('shn','n')"><input type="radio" name="shn-r" value="n"> โทรไม่ติด</label>
+            </div>
+          </div>
+
+          <div id="shn-c-fields" class="cond-fields hidden">
+            <div class="field-row">
+              <label>ให้ข้อมูลว่า</label>
+              <textarea class="field-ta" id="shn-given-info" placeholder="ระบุข้อมูล..."></textarea>
+            </div>
+          </div>
+          <div id="shn-n-fields" class="cond-fields hidden">
+            <div class="field-row">
+              <label>เสียงสัญญาณ</label>
+              <input type="text" id="shn-signal" placeholder="เช่น ดัง / ไม่มีสัญญาณ / ไม่รับสาย">
+            </div>
+          </div>
+
+          <button class="btn-primary" onclick="gen('notify')">แสดงผล</button>
+
+          <div id="shn-out" class="hidden">
+            <div class="output-card">
+              <div class="btn-row">
+                <button class="memo-btn" onclick="toMemo('shn-out-txt')">→ Memo</button>
+                <button class="copy-btn" onclick="doCopy('shn-out-txt')">คัดลอก</button>
+              </div>
+              <p id="shn-out-txt"></p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Note panel -->
+  <div class="note-panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+      <h3>📝 Memo</h3>
+      <button class="btn-clear-memo" onclick="document.getElementById('memo-ta').value=''" title="เคลียข้อความ">✕ เคลียร์</button>
+    </div>
+    <textarea id="memo-ta" placeholder="จดบันทึกไว้ที่นี่..."></textarea>
+  </div>
+</div>
+
+<div class="copied-toast" id="toast"></div>
+
+<script>
+const thaiMonths = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+  'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+
+function setDate(id) {
+  const d = new Date();
+  document.getElementById(id).value = `${d.getDate()} ${thaiMonths[d.getMonth()]} ${d.getFullYear()+543}`;
+}
+function setTime(id) {
+  const d = new Date();
+  document.getElementById(id).value = `${String(d.getHours()).padStart(2,'0')}.${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function fmtWO(raw) {
+  return 'WO' + raw.trim().replace(/^WO/i,'').trim();
+}
+
+function switchCat() {
+  const v = document.getElementById('mainCat').value;
+  ['callback','docs','shop'].forEach(s => document.getElementById('sec-'+s).classList.add('hidden'));
+  if (v) document.getElementById('sec-'+v).classList.remove('hidden');
+}
+
+function cbPurposeChange() {
+  const p = document.getElementById('cb-purpose').value;
+  document.getElementById('cb-info-field').classList.add('hidden');
+  document.getElementById('cb-doctrack-field').classList.add('hidden');
+  if (p === 'info' || p === 'notify') {
+    document.getElementById('cb-info-field').classList.remove('hidden');
+  } else if (p === 'doctrack') {
+    const el = document.getElementById('cb-doctrack-field');
+    el.classList.remove('hidden');
+    el.style.display = 'flex';
+  }
+}
+
+const activeTab = {};
+function setDocTab(pfx, sub, btn) {
+  activeTab[pfx] = sub;
+  ['buy','invest','parcel'].forEach(s => {
+    const el = document.getElementById(`${pfx}-docs-${s}`);
+    if (el) el.classList.add('hidden');
+  });
+  document.getElementById(`${pfx}-docs-${sub}`)?.classList.remove('hidden');
+  btn.parentElement.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function setRadio(pfx, val) {
+  document.getElementById(`${pfx}-c-fields`).classList.add('hidden');
+  document.getElementById(`${pfx}-n-fields`).classList.add('hidden');
+  const lblC = document.getElementById(`${pfx}-lbl-c`);
+  const lblN = document.getElementById(`${pfx}-lbl-n`);
+  lblC.classList.remove('active-connected', 'active-notconnected');
+  lblN.classList.remove('active-connected', 'active-notconnected');
+  if (val === 'c') {
+    document.getElementById(`${pfx}-c-fields`).classList.remove('hidden');
+    lblC.classList.add('active-connected');
+    if (pfx === 'sh') document.getElementById('sh-notify-wrap').classList.remove('hidden');
+  } else {
+    document.getElementById(`${pfx}-n-fields`).classList.remove('hidden');
+    lblN.classList.add('active-notconnected');
+    if (pfx === 'sh') document.getElementById('sh-notify-wrap').classList.add('hidden');
+  }
+  document.querySelector(`input[name="${pfx}-r"][value="${val}"]`).checked = true;
+}
+
+function getChecked(group) {
+  return Array.from(document.querySelectorAll(`input[data-group="${group}"]:checked`))
+    .map((i,idx) => `${idx+1}. ${i.dataset.text}`).join(' ');
+}
+
+function getPurpose() {
+  const p = document.getElementById('cb-purpose').value;
+  const ex = document.getElementById('cb-info-text').value.trim();
+  if (p === 'info') return `เพื่อสอบถามข้อมูลเพิ่มเติม ${ex}`;
+  if (p === 'notify') return `เพื่อแจ้งข้อมูล ${ex}`;
+  if (p === 'doctrack') return `เพื่อติดตามเอกสารเพิ่มเติม ${getChecked('cb-'+(activeTab['cb']||'buy'))}`;
+  return '';
+}
+
+function gen(type) {
+  let text = '';
+
+  if (type === 'callback') {
+    const wo    = fmtWO(document.getElementById('cb-wo').value||'');
+    const round = document.getElementById('cb-round').value;
+    const name  = document.getElementById('cb-name').value.trim();
+    const phone = document.getElementById('cb-phone').value.trim();
+    const date  = document.getElementById('cb-date').value;
+    const time  = document.getElementById('cb-time').value;
+    const purpose = getPurpose();
+    const v = document.querySelector('input[name="cb-r"]:checked')?.value;
+    if (v === 'c') {
+      const info = document.getElementById('cb-given-info').value.trim();
+      text = `//ติดต่อกลับผู้ร้อง อ้างอิง ${wo} (ครั้งที่ ${round}) วันที่ ${date} เวลา ${time} น. ทำการติดต่อผู้ร้องชื่อ ${name} หมายเลขโทรศัพท์ ${phone} ${purpose} เบื้องต้นโทรติด ผู้ร้องรับสาย และให้ข้อมูลว่า ${info}`;
+    } else if (v === 'n') {
+      const sig = document.getElementById('cb-signal').value.trim();
+      text = `//ติดต่อกลับผู้ร้อง อ้างอิง ${wo} (ครั้งที่ ${round}) วันที่ ${date} เวลา ${time} น. ทำการติดต่อผู้ร้องชื่อ ${name} หมายเลขโทรศัพท์ ${phone} ${purpose} เบื้องต้นไม่สามารถติดต่อได้ เสียงสัญญาณ ${sig}`;
+    }
+    document.getElementById('cb-out-txt').textContent = text;
+    document.getElementById('cb-out').classList.remove('hidden');
+  }
+
+  else if (type === 'docs') {
+    const wo    = fmtWO(document.getElementById('doc-wo').value||'');
+    const round = document.getElementById('doc-round').value;
+    const name  = document.getElementById('doc-name').value.trim();
+    const phone = document.getElementById('doc-phone').value.trim();
+    const date  = document.getElementById('doc-date').value;
+    const time  = document.getElementById('doc-time').value;
+    const docs  = getChecked('doc-'+(activeTab['doc']||'buy'));
+    const v = document.querySelector('input[name="doc-r"]:checked')?.value;
+    if (v === 'c') {
+      const info = document.getElementById('doc-given-info').value.trim();
+      text = `//ติดตามเอกสารผู้ร้อง อ้างอิง ${wo} (ครั้งที่ ${round}) วันที่ ${date} เวลา ${time} น. ทำการติดต่อผู้ร้องชื่อ ${name} หมายเลขโทรศัพท์ ${phone} เพื่อติดตามเอกสารหลักฐาน ${docs} เบื้องต้นโทรติด ผู้ร้องรับสาย และให้ข้อมูลว่า ${info}`;
+    } else if (v === 'n') {
+      const sig = document.getElementById('doc-signal').value.trim();
+      text = `//ติดตามเอกสารผู้ร้อง อ้างอิง ${wo} (ครั้งที่ ${round}) วันที่ ${date} เวลา ${time} น. ทำการติดต่อผู้ร้องชื่อ ${name} หมายเลขโทรศัพท์ ${phone} เพื่อติดตามเอกสารหลักฐาน ${docs} เบื้องต้นไม่สามารถติดต่อได้ เสียงสัญญาณ ${sig}`;
+    }
+    document.getElementById('doc-out-txt').textContent = text;
+    document.getElementById('doc-out').classList.remove('hidden');
+  }
+
+  else if (type === 'shop') {
+    const wo    = fmtWO(document.getElementById('sh-wo').value||'');
+    const round = document.getElementById('sh-round').value;
+    const phone = document.getElementById('sh-phone').value.trim();
+    const date  = document.getElementById('sh-date').value;
+    const time  = document.getElementById('sh-time').value;
+    const v = document.querySelector('input[name="sh-r"]:checked')?.value;
+    if (v === 'c') {
+      const info = document.getElementById('sh-given-info').value.trim();
+      text = `//ติดต่อเจรจาร้านค้า อ้างอิง ${wo} (ครั้งที่ ${round}) วันที่ ${date} เวลา ${time} น. ทำการติดต่อเจรจาร้านค้าผ่านหมายเลขโทรศัพท์ ${phone} เบื้องต้นโทรติด ร้านค้ารับสาย และให้ข้อมูลว่า ${info}`;
+    } else if (v === 'n') {
+      const sig = document.getElementById('sh-signal').value.trim();
+      text = `//ติดต่อเจรจาร้านค้า อ้างอิง ${wo} (ครั้งที่ ${round}) วันที่ ${date} เวลา ${time} น. ทำการติดต่อเจรจาร้านค้าผ่านหมายเลขโทรศัพท์ ${phone} เบื้องต้นไม่สามารถติดต่อได้ เสียงสัญญาณ ${sig}`;
+    }
+    document.getElementById('sh-out-txt').textContent = text;
+    document.getElementById('sh-out').classList.remove('hidden');
+  }
+
+  else if (type === 'notify') {
+    const wo     = document.getElementById('shn-wo').value;
+    const date   = document.getElementById('shn-date').value;
+    const name   = document.getElementById('shn-name').value.trim();
+    const phone  = document.getElementById('shn-phone').value.trim();
+    const time   = document.getElementById('shn-time').value;
+    const result = document.getElementById('shn-result').value.trim();
+    const v = document.querySelector('input[name="shn-r"]:checked')?.value;
+    if (v === 'c') {
+      const info = document.getElementById('shn-given-info').value.trim();
+      text = `//แจ้งผลกลับผู้ร้อง อ้างอิง ${wo} วันที่ ${date} เวลา ${time} น. ทำการติดต่อผู้ร้องชื่อ ${name} หมายเลขโทรศัพท์ ${phone} เพื่อแจ้งผลการเจรจาให้ผู้ร้องทราบว่า ผู้จำหน่ายรับสาย แจ้งว่า ${result} เบื้องต้นโทรติด ผู้ร้องรับสาย และให้ข้อมูลว่า ${info}`;
+    } else if (v === 'n') {
+      const sig = document.getElementById('shn-signal').value.trim();
+      text = `//แจ้งผลกลับผู้ร้อง อ้างอิง ${wo} วันที่ ${date} เวลา ${time} น. ทำการติดต่อผู้ร้องชื่อ ${name} หมายเลขโทรศัพท์ ${phone} เพื่อแจ้งผลการเจรจาให้ผู้ร้องทราบว่า ผู้จำหน่ายรับสาย แจ้งว่า ${result} เบื้องต้นไม่สามารถติดต่อได้ เสียงสัญญาณ ${sig}`;
+    }
+    document.getElementById('shn-out-txt').textContent = text;
+    document.getElementById('shn-out').classList.remove('hidden');
+  }
+}
+
+function toggleNotify() {
+  const sec = document.getElementById('sh-notify-sec');
+  sec.classList.toggle('hidden');
+  // Auto-fill WO and date
+  document.getElementById('shn-wo').value = fmtWO(document.getElementById('sh-wo').value||'');
+  document.getElementById('shn-date').value = document.getElementById('sh-date').value;
+  // Auto-fill result from shop given-info
+  const shopInfo = document.getElementById('sh-given-info').value.trim();
+  if (shopInfo) document.getElementById('shn-result').value = shopInfo;
+}
+
+function toggleAll(group, btn) {
+  const boxes = document.querySelectorAll(`input[data-group="${group}"]`);
+  const allChecked = Array.from(boxes).every(b => b.checked);
+  boxes.forEach(b => b.checked = !allChecked);
+  btn.textContent = allChecked ? 'เลือกทั้งหมด' : 'ยกเลิกทั้งหมด';
+}
+
+document.addEventListener('change', function(e) {
+  const group = e.target.dataset?.group;
+  if (!group) return;
+  const boxes = document.querySelectorAll(`input[data-group="${group}"]`);
+  const btn = document.querySelector(`.btn-select-all[onclick="toggleAll('${group}',this)"]`);
+  if (btn) btn.textContent = Array.from(boxes).every(b => b.checked) ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด';
+});
+
+function doCopy(id) {
+  navigator.clipboard.writeText(document.getElementById(id).textContent)
+    .then(() => showToast('คัดลอกแล้ว ✓', '#38d9a9'));
+}
+
+function toMemo(id) {
+  const text = document.getElementById(id).textContent;
+  if (!text) return;
+  const ta = document.getElementById('memo-ta');
+  ta.value += (ta.value ? '\n\n' : '') + text;
+  showToast('ส่งไปยัง Memo แล้ว ✓', '#4f8ef7');
+}
+
+function doImport() {
+  const raw = document.getElementById('import-ta').value.trim();
+  if (!raw) { showToast('กรุณาวางเท็มเพลตก่อนครับ', '#ff6b6b'); return; }
+
+  // Strip leading //
+  const text = raw.replace(/^\/\/\s*/, '');
+
+  // Helper: extract value between two markers (or to end of string)
+  function between(str, after, before) {
+    const a = str.indexOf(after);
+    if (a === -1) return '';
+    const start = a + after.length;
+    if (!before) return str.slice(start).trim();
+    const b = str.indexOf(before, start);
+    return (b === -1 ? str.slice(start) : str.slice(start, b)).trim();
+  }
+
+  // Detect type
+  let type = '';
+  if (text.startsWith('ติดต่อกลับผู้ร้อง')) type = 'callback';
+  else if (text.startsWith('ติดตามเอกสารผู้ร้อง')) type = 'docs';
+  else if (text.startsWith('ติดต่อเจรจาร้านค้า')) type = 'shop';
+  else if (text.startsWith('แจ้งผลกลับผู้ร้อง')) type = 'notify';
+
+  if (!type) { showToast('ไม่รู้จักรูปแบบเท็มเพลตนี้ครับ', '#ff6b6b'); return; }
+
+  // ── CALLBACK ──
+  if (type === 'callback') {
+    document.getElementById('mainCat').value = 'callback';
+    switchCat();
+
+    const wo    = between(text, 'อ้างอิง ', ' (ครั้งที่');
+    const round = between(text, '(ครั้งที่ ', ')');
+    const date  = between(text, 'วันที่ ', ' เวลา');
+    const time  = between(text, 'เวลา ', ' น.');
+    const name  = between(text, 'ทำการติดต่อผู้ร้องชื่อ ', ' หมายเลขโทรศัพท์');
+    const phone = between(text, 'หมายเลขโทรศัพท์ ', ' เพื่อ');
+
+    document.getElementById('cb-wo').value    = wo;
+    document.getElementById('cb-round').value = round;
+    setDate('cb-date');
+    setTime('cb-time');
+    document.getElementById('cb-name').value  = name;
+    document.getElementById('cb-phone').value = phone;
+
+    // Purpose
+    if (text.includes('เพื่อสอบถามข้อมูลเพิ่มเติม')) {
+      document.getElementById('cb-purpose').value = 'info';
+      const detail = between(text, 'เพื่อสอบถามข้อมูลเพิ่มเติม ', ' เบื้องต้น');
+      document.getElementById('cb-info-text').value = detail;
+    } else if (text.includes('เพื่อแจ้งข้อมูล')) {
+      document.getElementById('cb-purpose').value = 'notify';
+      const detail = between(text, 'เพื่อแจ้งข้อมูล ', ' เบื้องต้น');
+      document.getElementById('cb-info-text').value = detail;
+    }
+    cbPurposeChange();
+
+    // Call result
+    if (text.includes('เบื้องต้นโทรติด')) {
+      setRadio('cb','c');
+      const info = between(text, 'และให้ข้อมูลว่า ');
+      document.getElementById('cb-given-info').value = info;
+    } else if (text.includes('เบื้องต้นไม่สามารถติดต่อได้')) {
+      setRadio('cb','n');
+      const sig = between(text, 'เสียงสัญญาณ ');
+      document.getElementById('cb-signal').value = sig;
+    }
+    // Increment round
+    const r = parseInt(round);
+    if (!isNaN(r)) document.getElementById('cb-round').value = r + 1;
+  }
+
+  // ── DOCS ──
+  else if (type === 'docs') {
+    document.getElementById('mainCat').value = 'docs';
+    switchCat();
+
+    const wo    = between(text, 'อ้างอิง ', ' (ครั้งที่');
+    const round = between(text, '(ครั้งที่ ', ')');
+    const date  = between(text, 'วันที่ ', ' เวลา');
+    const time  = between(text, 'เวลา ', ' น.');
+    const name  = between(text, 'ทำการติดต่อผู้ร้องชื่อ ', ' หมายเลขโทรศัพท์');
+    const phone = between(text, 'หมายเลขโทรศัพท์ ', ' เพื่อติดตาม');
+
+    document.getElementById('doc-wo').value    = wo;
+    document.getElementById('doc-round').value = round;
+    setDate('doc-date');
+    setTime('doc-time');
+    document.getElementById('doc-name').value  = name;
+    document.getElementById('doc-phone').value = phone;
+
+    // ── Parse & tick checkboxes ──
+    // Extract the doc list string: between "เพื่อติดตามเอกสารหลักฐาน " and " เบื้องต้น"
+    const docBlock = between(text, 'เพื่อติดตามเอกสารหลักฐาน ', ' เบื้องต้น');
+
+    if (docBlock) {
+      // Split numbered items: "1. xxx 2. yyy 3. zzz"
+      const docItems = docBlock.split(/\d+\.\s+/).map(s => s.trim()).filter(Boolean);
+
+      // Uncheck all doc checkboxes first
+      document.querySelectorAll('input[data-group^="doc-"]').forEach(b => b.checked = false);
+
+      // Determine which sub-group matched and activate it
+      const allGroups = ['doc-buy', 'doc-invest', 'doc-parcel'];
+      let matchedGroup = null;
+      let bestScore = 0;
+
+      allGroups.forEach(grp => {
+        const boxes = document.querySelectorAll(`input[data-group="${grp}"]`);
+        let score = 0;
+        boxes.forEach(box => {
+          if (docItems.some(item => item.trim() === box.dataset.text.trim())) score++;
+        });
+        if (score > bestScore) { bestScore = score; matchedGroup = grp; }
+      });
+
+      // Fall back to fuzzy: just try all groups
+      if (!matchedGroup) matchedGroup = 'doc-buy';
+
+      // Switch to the matched tab
+      const subName = matchedGroup.replace('doc-', '');
+      const tabBtn = document.querySelector(`#sec-docs .tab-btn[onclick*="'${subName}'"]`);
+      if (tabBtn) setDocTab('doc', subName, tabBtn);
+
+      // Tick matching checkboxes — exact match only (data-text === parsed item)
+      const boxes = document.querySelectorAll(`input[data-group="${matchedGroup}"]`);
+      boxes.forEach(box => {
+        const dataText = box.dataset.text.trim();
+        const matched = docItems.some(item => item.trim() === dataText);
+        box.checked = matched;
+      });
+
+      // Update select-all button state
+      const btn = document.querySelector(`.btn-select-all[onclick="toggleAll('${matchedGroup}',this)"]`);
+      if (btn) {
+        const allBoxes = document.querySelectorAll(`input[data-group="${matchedGroup}"]`);
+        btn.textContent = Array.from(allBoxes).every(b => b.checked) ? 'ยกเลิกทั้งหมด' : 'เลือกทั้งหมด';
+      }
+    }
+
+    if (text.includes('เบื้องต้นโทรติด')) {
+      setRadio('doc','c');
+      document.getElementById('doc-given-info').value = between(text, 'และให้ข้อมูลว่า ');
+    } else if (text.includes('เบื้องต้นไม่สามารถติดต่อได้')) {
+      setRadio('doc','n');
+      document.getElementById('doc-signal').value = between(text, 'เสียงสัญญาณ ');
+    }
+    const r = parseInt(round);
+    if (!isNaN(r)) document.getElementById('doc-round').value = r + 1;
+  }
+
+  // ── SHOP ──
+  else if (type === 'shop') {
+    document.getElementById('mainCat').value = 'shop';
+    switchCat();
+
+    const wo    = between(text, 'อ้างอิง ', ' (ครั้งที่');
+    const round = between(text, '(ครั้งที่ ', ')');
+    const date  = between(text, 'วันที่ ', ' เวลา');
+    const time  = between(text, 'เวลา ', ' น.');
+    // Phone: ดึงแค่ส่วนเบอร์ (ตัดที่ช่องว่างแรก)
+    const rawPhone = between(text, 'ผ่านหมายเลขโทรศัพท์ ', ' เบื้องต้น');
+    const phone = rawPhone.split(' ')[0];
+
+    document.getElementById('sh-wo').value    = wo;
+    document.getElementById('sh-round').value = round;
+    setDate('sh-date');
+    setTime('sh-time');
+    document.getElementById('sh-phone').value = phone;
+
+    // รองรับ เบื้องต้นโทรติด และ เบื้องต้น โทรติด (มีช่องว่าง)
+    if (/เบื้องต้น\s*โทรติด/.test(text)) {
+      setRadio('sh','c');
+      document.getElementById('sh-given-info').value = between(text, 'และให้ข้อมูลว่า ');
+    } else if (/เบื้องต้น\s*ไม่สามารถ/.test(text)) {
+      setRadio('sh','n');
+      // รองรับทั้ง เสียงสัญญาณ, ลักษณะสัญญาณ และกรณีไม่มีคำนำ
+      const sigRaw = between(text, 'เสียงสัญญาณ ') ||
+                     between(text, 'ลักษณะสัญญาณ ') ||
+                     between(text, 'ไม่สามารถติดต่อได้ ');
+      document.getElementById('sh-signal').value = sigRaw;
+    }
+    const r = parseInt(round);
+    if (!isNaN(r)) document.getElementById('sh-round').value = r + 1;
+  }
+
+  // ── NOTIFY ──
+  else if (type === 'notify') {
+    document.getElementById('mainCat').value = 'shop';
+    switchCat();
+
+    const wo    = between(text, 'อ้างอิง ', ' วันที่');
+    const date  = between(text, 'วันที่ ', ' เวลา');
+    const time  = between(text, 'เวลา ', ' น.');
+    const name  = between(text, 'ทำการติดต่อผู้ร้องชื่อ ', ' หมายเลขโทรศัพท์');
+    const phone = between(text, 'หมายเลขโทรศัพท์ ', ' เพื่อแจ้ง');
+    const result = between(text, 'ผู้จำหน่ายรับสาย แจ้งว่า ', ' เบื้องต้น');
+
+    // Fill shop WO/date so notify sub-form auto-fills
+    document.getElementById('sh-wo').value   = wo;
+    setDate('sh-date');
+
+    // Show notify section
+    document.getElementById('sh-notify-wrap').classList.remove('hidden');
+    document.getElementById('sh-notify-sec').classList.remove('hidden');
+    document.getElementById('shn-wo').value   = wo;
+    setDate('shn-date');
+    document.getElementById('shn-name').value  = name;
+    document.getElementById('shn-phone').value = phone;
+    setTime('shn-time');
+    document.getElementById('shn-result').value = result;
+
+    if (text.includes('เบื้องต้นโทรติด')) {
+      setRadio('shn','c');
+      document.getElementById('shn-given-info').value = between(text, 'และให้ข้อมูลว่า ');
+    } else if (text.includes('เบื้องต้นไม่สามารถติดต่อได้')) {
+      setRadio('shn','n');
+      document.getElementById('shn-signal').value = between(text, 'เสียงสัญญาณ ');
+    }
+  }
+
+  showToast('นำเข้าสำเร็จ ✓ แก้ไขและแสดงผลใหม่ได้เลยครับ', '#38d9a9');
+
+  // Scroll to form
+  setTimeout(() => {
+    const sec = document.querySelector('.form-card');
+    if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+
+function resetAll() {
+  if (!confirm('รีเซ็ตฟอร์มทั้งหมด? ข้อมูลที่กรอกไว้จะหายหมดครับ')) return;
+
+  // Reset category
+  document.getElementById('mainCat').value = '';
+  switchCat();
+
+  // Clear all inputs/textareas in forms (not memo, not import)
+  const formArea = document.querySelector('.content-area');
+  formArea.querySelectorAll('input[type="text"], input[type="number"]').forEach(el => {
+    el.value = '';
+  });
+  formArea.querySelectorAll('textarea.field-ta').forEach(el => el.value = '');
+  document.getElementById('import-ta').value = '';
+
+  // Uncheck all checkboxes
+  document.querySelectorAll('input[type="checkbox"]').forEach(b => b.checked = false);
+
+  // Reset radios & labels for all prefixes
+  ['cb','doc','sh','shn'].forEach(pfx => {
+    const lc = document.getElementById(`${pfx}-lbl-c`);
+    const ln = document.getElementById(`${pfx}-lbl-n`);
+    if (lc) lc.classList.remove('active-connected','active-notconnected');
+    if (ln) ln.classList.remove('active-connected','active-notconnected');
+    const rc = document.querySelector(`input[name="${pfx}-r"]`);
+    if (rc) rc.checked = false;
+  });
+
+  // Hide conditional fields and outputs
+  document.querySelectorAll('.cond-fields, [id$="-out"], #sh-notify-wrap, #sh-notify-sec, #cb-doctrack-field, #cb-info-field').forEach(el => {
+    el.classList.add('hidden');
+  });
+
+  // Reset select-all buttons
+  document.querySelectorAll('.btn-select-all').forEach(btn => btn.textContent = 'เลือกทั้งหมด');
+
+  // Reset purpose dropdown
+  const cbPurp = document.getElementById('cb-purpose');
+  if (cbPurp) cbPurp.value = '';
+
+  showToast('รีเซ็ตเรียบร้อยแล้ว ✓', '#4f8ef7');
+}
+
+function showToast(msg, color) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = color;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+</script>
+  <!-- Float reset button -->
+  <button class="btn-float-reset" onclick="resetAll()" title="รีเซ็ตฟอร์มทั้งหมด">↺ รีเซ็ต</button>
+</body>
+</html>

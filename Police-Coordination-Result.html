@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>แบบฟอร์มตอบกลับ (ตำรวจ)</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f2f5;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 { text-align: center; margin-bottom: 20px; color: #333; }
+    
+    .smart-box {
+      background: #fff8ee;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px dashed #faad41;
+      margin-bottom: 20px;
+    }
+    
+    label { font-weight: bold; display: block; margin-top: 15px; }
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-sizing: border-box;
+      font-size: 15px;
+    }
+    .input-highlight { border-color: #faad41 !important; }
+
+    button {
+      margin-top: 20px;
+      padding: 12px 20px;
+      background-color: #007bff;
+      border: none;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      width: 100%;
+    }
+    button:hover { background-color: #0056b3; }
+    
+    #result {
+      margin-top: 30px;
+      white-space: pre-line;
+      background-color: #f9f9f9;
+      border-left: 5px solid #007bff;
+      padding: 15px;
+      border-radius: 6px;
+      display: none;
+    }
+    .section-title {
+      font-weight: bold;
+      margin-top: 15px;
+      margin-bottom: 5px;
+      color: #0056b3;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 5px;
+    }
+    .copy-btn {
+      background-color: #28a745;
+      margin-top: 10px;
+      font-size: 14px;
+      padding: 8px;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+    }
+    .copy-btn.copied { background-color: #155724 !important; }
+    small { color: #666; display: block; margin-top: 5px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>ฟอร์มตอบกลับผู้ร้อง (ศปอส.ตร.)</h2>
+
+    <div class="smart-box">
+      <label style="color: #e67e22; margin-top: 0;">⚡ วางข้อมูลที่ก๊อปปี้จาก Sheet ที่นี่:</label>
+      <input type="text" id="smart_paste" class="input-highlight" placeholder="วางข้อมูลรวม ชื่อ+เลข WO ที่นี่">
+      <small>*ระบบจะแยกส่วนชื่อและเลข WO ให้โดยอัตโนมัติ</small>
+    </div>
+
+    <hr>
+
+    <label for="name">ชื่อผู้ร้อง (ไม่ต้องใส่ นาย/นาง/นางสาว):</label>
+    <input type="text" id="name" placeholder="ชื่อจะปรากฏที่นี่">
+
+    <label for="wo">เลข WO:</label>
+    <input type="text" id="wo" placeholder="เลข WO จะปรากฏที่นี่">
+
+    <button onclick="generateReply()">สร้างข้อความ (Query)</button>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    document.getElementById('smart_paste').addEventListener('input', function(e) {
+      let rawData = e.target.value;
+      if (!rawData) return;
+
+      const woMatch = rawData.match(/WO[\d]+/i);
+      if (woMatch) {
+        document.getElementById('wo').value = woMatch[0].trim();
+      }
+
+      const nameMatch = rawData.match(/^(.*?)(?=WO)/i);
+      if (nameMatch) {
+        let extractedName = nameMatch[1].replace(/[\t\n\r]/g, ' ').trim();
+        document.getElementById('name').value = extractedName;
+      }
+
+      setTimeout(() => { e.target.value = ''; }, 300);
+    });
+
+    function removeTitleAndCleanSpaces(fullName) {
+      const titles = ["นางสาว", "นาย", "นาง", "คุณ"];
+      let name = fullName.trim();
+      for (let title of titles) {
+        const regex = new RegExp("^" + title); 
+        if (regex.test(name)) {
+          name = name.replace(regex, "").trim();
+          break;
+        }
+      }
+      return name.replace(/\s+/g, ' ');
+    }
+
+    function generateReply() {
+      const nameInput = document.getElementById("name").value.trim();
+      const wo = document.getElementById("wo").value.trim();
+
+      if (!nameInput || !wo) {
+        alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+        return;
+      }
+
+      const cleanName = removeTitleAndCleanSpaces(nameInput);
+
+      // แก้ไข: ลบคำว่า "ตอบกลับผู้ร้อง ศปอส.ตร." ออกเรียบร้อย
+      const message1 = `สวัสดีค่ะ คุณ${cleanName} ขณะนี้เรื่องร้องเรียนของท่านอยู่ระหว่างการดำเนินการของทางศูนย์ปราบปรามอาชญากรรมทางเทคโนโลยีสารสนเทศ สำนักงานตำรวจแห่งชาติ (ศปอส.ตร.) หมายเลขอ้างอิง ${wo} เรียบร้อยแล้ว หากมีข้อสงสัยเพิ่มเติมสามารถติดต่อทางศูนย์ฯ ได้ที่หมายเลขสายด่วน 1212 ตลอด 24 ชั่วโมงค่ะ`;
+      
+      const message2 = `ติดต่อกลับผู้ร้องแจ้งสถานะการดำเนินงาน//สวัสดีค่ะ คุณ${cleanName} ขณะนี้เรื่องร้องเรียนของท่านอยู่ระหว่างการดำเนินการของทางศูนย์ปราบปรามอาชญากรรมทางเทคโนโลยีสารสนเทศ สำนักงานตำรวจแห่งชาติ (ศปอส.ตร.) หมายเลขอ้างอิง ${wo} เรียบร้อยแล้ว หากมีข้อสงสัยเพิ่มเติมสามารถติดต่อทางศูนย์ฯ ได้ที่หมายเลขสายด่วน 1212 ตลอด 24 ชั่วโมงค่ะ`;
+
+      const resultDiv = document.getElementById("result");
+      resultDiv.style.display = "block";
+      resultDiv.innerHTML = `
+        <div class="section-title">(ตอบผู้ร้อง)</div>
+        <div id="text1">${message1}</div>
+        <button class="copy-btn" onclick="copyToClipboard('text1', this)">คัดลอกข้อความตอบผู้ร้อง</button>
+        <div class="section-title">(ลง CRM)</div>
+        <div id="text2">${message2}</div>
+        <button class="copy-btn" onclick="copyToClipboard('text2', this)">คัดลอกข้อความลง CRM</button>
+      `;
+    }
+
+    function copyToClipboard(elementId, btn) {
+      const text = document.getElementById(elementId).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const originalText = btn.innerText;
+        btn.innerText = "✅ คัดลอกสำเร็จ!";
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.innerText = originalText;
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>
