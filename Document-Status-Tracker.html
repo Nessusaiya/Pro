@@ -186,10 +186,141 @@
                     "right";
             }
         }
+
+        /* ── Import Panel ── */
+        .import-panel {
+            margin-bottom: 18px;
+            padding: 16px 20px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-top: 3px solid #6c757d;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .import-panel.theme-red-panel {
+            background: #fff5f5;
+            border-color: #ffc9c9;
+            border-top-color: #c92a2a;
+        }
+        .import-panel.theme-green-panel {
+            background: #f0fff4;
+            border-color: #b2f2bb;
+            border-top-color: #2b8a3e;
+        }
+        .import-panel-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .import-panel-icon {
+            width: 30px; height: 30px;
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+            color: #fff;
+            font-weight: bold;
+        }
+        .theme-red-panel .import-panel-icon { background: #c92a2a; }
+        .theme-green-panel .import-panel-icon { background: #2b8a3e; }
+        .import-panel-title {
+            font-weight: bold;
+            font-size: 1em;
+        }
+        .theme-red-panel .import-panel-title { color: #c92a2a; }
+        .theme-green-panel .import-panel-title { color: #2b8a3e; }
+        .import-panel-sub {
+            font-size: 0.82em;
+            color: #888;
+            margin-top: 2px;
+        }
+        .import-badge {
+            display: inline-block;
+            padding: 1px 8px;
+            border-radius: 99px;
+            font-size: 0.72em;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            margin-left: 6px;
+        }
+        .theme-red-panel .import-badge {
+            background: rgba(201,42,42,0.1);
+            color: #c92a2a;
+        }
+        .theme-green-panel .import-badge {
+            background: rgba(43,138,62,0.1);
+            color: #2b8a3e;
+        }
+        .import-panel textarea.import-ta {
+            width: 100%;
+            height: 72px;
+            min-height: 60px;
+            padding: 9px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.92em;
+            resize: vertical;
+            box-sizing: border-box;
+            background: #fff;
+            color: #333;
+            transition: border-color .18s, box-shadow .18s;
+        }
+        .theme-red-panel textarea.import-ta:focus {
+            border-color: #c92a2a;
+            box-shadow: 0 0 0 3px rgba(201,42,42,0.1);
+            outline: none;
+        }
+        .theme-green-panel textarea.import-ta:focus {
+            border-color: #2b8a3e;
+            box-shadow: 0 0 0 3px rgba(43,138,62,0.1);
+            outline: none;
+        }
+        .import-panel textarea.import-ta::placeholder { color: #bbb; font-size: 0.88em; }
+        .btn-import {
+            margin-top: 8px;
+            padding: 9px 22px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: opacity .15s;
+        }
+        .theme-red-panel .btn-import { background: #c92a2a; }
+        .theme-green-panel .btn-import { background: #2b8a3e; }
+        .btn-import:hover { opacity: 0.85; }
+
+        /* ── Toast ── */
+        #doc-toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%) translateY(16px);
+            padding: 10px 28px;
+            border-radius: 99px;
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.95em;
+            font-weight: bold;
+            color: #fff;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .25s, transform .25s;
+            z-index: 9999;
+            white-space: nowrap;
+        }
+        #doc-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
 <body>
+
+    <div id="doc-toast"></div>
 
     <div class="tabs">
         <button class="tab-btn active red-tab" onclick="openPage('page1', this)">เพจ 1: เอกสารไม่ครบ</button>
@@ -197,6 +328,18 @@
     </div>
 
     <div id="page1" class="page active theme-red">
+        <!-- Import Panel เพจ 1 -->
+        <div class="import-panel theme-red-panel">
+            <div class="import-panel-header">
+                <div class="import-panel-icon">↩</div>
+                <div>
+                    <div class="import-panel-title">นำเข้าข้อมูลอัตโนมัติ <span class="import-badge">AUTO FILL</span></div>
+                    <div class="import-panel-sub">วางบันทึก CRM จากครั้งก่อน ระบบจะกรอกข้อมูลและติ๊กเอกสารให้อัตโนมัติ</div>
+                </div>
+            </div>
+            <textarea class="import-ta" id="p1_import_ta" placeholder="วางบันทึก CRM ที่นี่ เช่น&#10;ติดต่อกลับผู้ร้อง WO123456 (ครั้งที่ 2) ตอบกลับ Line จากการตรวจสอบหลักฐานขาดดังนี้&#10;1. หลักฐานการสนทนา...&#10;ผู้ร้องรับทราบ"></textarea>
+            <button class="btn-import" type="button" onclick="doImportPage1()">↩ นำเข้าข้อมูล</button>
+        </div>
         <div class="main-grid">
             
             <div class="box box-top">
@@ -284,6 +427,18 @@
     </div>
 
     <div id="page2" class="page theme-green">
+        <!-- Import Panel เพจ 2 -->
+        <div class="import-panel theme-green-panel">
+            <div class="import-panel-header">
+                <div class="import-panel-icon">↩</div>
+                <div>
+                    <div class="import-panel-title">นำเข้าข้อมูลอัตโนมัติ <span class="import-badge">AUTO FILL</span></div>
+                    <div class="import-panel-sub">วางบันทึกจาก "แจ้งกลุ่ม Line" ครั้งก่อน ระบบจะกรอกข้อมูลให้อัตโนมัติ</div>
+                </div>
+            </div>
+            <textarea class="import-ta" id="p2_import_ta" placeholder="วางข้อความ Line ที่นี่ เช่น&#10;ผู้ร้องทำการส่งเอกสารเข้ามาครบถ้วนแล้ว...&#10;อ้างอิง WO123456&#10;ปัญหาซื้อขายออนไลน์ (ไม่ได้รับสินค้า)&#10;ชื่อผู้ร้อง : นายสมชาย ใจดี&#10;ช่องทางการติดต่อ : Line&#10;ชื่อช่องทางการติดต่อ : @testshop"></textarea>
+            <button class="btn-import" type="button" onclick="doImportPage2()">↩ นำเข้าข้อมูล</button>
+        </div>
         <div class="main-grid">
             <div class="box box-top">
                 <h3>1. ใส่ข้อมูล (เอกสารครบถ้วน)</h3>
@@ -484,6 +639,180 @@
             document.getElementById('p2_email_output').value = "";
             document.getElementById('p2_line_output').value = "";
             checkCategoryOther();
+        }
+
+        // ── Toast ──
+        function showDocToast(msg, color) {
+            const t = document.getElementById('doc-toast');
+            t.textContent = msg;
+            t.style.background = color || '#333';
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2300);
+        }
+
+        // ── Helper: ดึงข้อความระหว่าง 2 markers ──
+        function extractBetween(str, after, before) {
+            const a = str.indexOf(after);
+            if (a === -1) return '';
+            const start = a + after.length;
+            if (!before) return str.slice(start).trim();
+            const b = str.indexOf(before, start);
+            return (b === -1 ? str.slice(start) : str.slice(start, b)).trim();
+        }
+
+        // ── Import เพจ 1 (เอกสารไม่ครบ) ──
+        // รูปแบบ CRM: "ติดต่อกลับผู้ร้อง WO123456 (ครั้งที่ N) ตอบกลับ Line จากการตรวจสอบหลักฐานขาดดังนี้\n1. xxx\n2. yyy\nผู้ร้องรับทราบ"
+        function doImportPage1() {
+            const raw = document.getElementById('p1_import_ta').value.trim();
+            if (!raw) { showDocToast('กรุณาวางบันทึก CRM ก่อนครับ', '#dc3545'); return; }
+
+            const text = raw.replace(/^\/\/\s*/, '');
+
+            if (!text.startsWith('ติดต่อกลับผู้ร้อง')) {
+                showDocToast('ไม่รู้จักรูปแบบนี้ครับ (ต้องเริ่มด้วย "ติดต่อกลับผู้ร้อง")', '#dc3545');
+                return;
+            }
+
+            // ดึง case id
+            const caseId = extractBetween(text, 'ติดต่อกลับผู้ร้อง ', ' (ครั้งที่');
+
+            // ดึงครั้งที่ และ +1
+            const roundStr = extractBetween(text, '(ครั้งที่ ', ')');
+            const round = parseInt(roundStr);
+            const nextRound = isNaN(round) ? '' : round + 1;
+
+            // ดึงช่องทางติดต่อ
+            const contactRaw = extractBetween(text, 'ตอบกลับ ', ' จากการตรวจสอบ');
+            const contactMap = { 'Line': 'Line', 'Facebook': 'Facebook', 'Email': 'Email' };
+            const contact = contactMap[contactRaw] || 'Line';
+
+            // ดึงรายการเอกสารขาด (numbered list ระหว่าง "ดังนี้" ถึง "ผู้ร้องรับทราบ" หรือท้ายสุด)
+            const listBlock = extractBetween(text, 'จากการตรวจสอบหลักฐานขาดดังนี้\n', '\nผู้ร้องรับทราบ')
+                           || extractBetween(text, 'จากการตรวจสอบหลักฐานขาดดังนี้\n', 'ผู้ร้องรับทราบ')
+                           || extractBetween(text, 'ดังนี้\n', '\nผู้ร้องรับทราบ')
+                           || extractBetween(text, 'ดังนี้\n', 'ผู้ร้องรับทราบ');
+
+            // Parse numbered items: "1. xxx\n2. yyy"
+            const parsedItems = listBlock
+                ? listBlock.split(/\n?\d+\.\s+/).map(s => s.trim()).filter(Boolean)
+                : [];
+
+            // ── Fill fields ──
+            if (caseId) document.getElementById('p1_case_id').value = caseId;
+            if (nextRound) document.getElementById('p1_followup_count').value = nextRound;
+
+            // Set contact type
+            const contactSel = document.getElementById('p1_contact_type');
+            for (let i = 0; i < contactSel.options.length; i++) {
+                if (contactSel.options[i].value === contact) { contactSel.value = contact; break; }
+            }
+
+            // ── Tick matching checkboxes ──
+            if (parsedItems.length > 0) {
+                // Uncheck all first (except select_all)
+                document.querySelectorAll('#page1 .checkbox-group input[type="checkbox"]:not(#p1_select_all)')
+                    .forEach(cb => cb.checked = false);
+                document.getElementById('p1_select_all').checked = false;
+
+                // Match: เทียบ value ของ checkbox กับ parsed items
+                // ใช้ includes แบบ fuzzy — ถ้า parsed item เป็น substring ของ checkbox value
+                const cbs = document.querySelectorAll('#page1 .checkbox-group input[type="checkbox"]:not(#p1_select_all)');
+                cbs.forEach(cb => {
+                    const val = cb.value.trim();
+                    // ตรวจหา keyword หลักของแต่ละ item
+                    const matched = parsedItems.some(item => {
+                        const itemClean = item.trim();
+                        // exact match หรือ item เป็น prefix ของ value หรือ value เริ่มด้วย item
+                        return val === itemClean || val.startsWith(itemClean) || itemClean.startsWith(val.slice(0, 15));
+                    });
+                    if (matched) cb.checked = true;
+                });
+
+                // ตรวจว่าติ๊กหมดไหม
+                const allCbs = document.querySelectorAll('#page1 .checkbox-group input[type="checkbox"]:not(#p1_select_all)');
+                const allChecked = Array.from(allCbs).every(cb => cb.checked);
+                document.getElementById('p1_select_all').checked = allChecked;
+            }
+
+            showDocToast('นำเข้าสำเร็จ ✓ ตรวจสอบและกดใส่ข้อมูลได้เลยครับ', '#2b8a3e');
+            setTimeout(() => {
+                document.querySelector('#page1 .box-top').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 150);
+        }
+
+        // ── Import เพจ 2 (เอกสารครบถ้วน) ──
+        // รูปแบบ Line: "ผู้ร้องทำการส่งเอกสาร...\nอ้างอิง WO...\nปัญหา...\nชื่อผู้ร้อง : ...\nช่องทางการติดต่อ : ...\nชื่อช่องทางการติดต่อ : ..."
+        function doImportPage2() {
+            const raw = document.getElementById('p2_import_ta').value.trim();
+            if (!raw) { showDocToast('กรุณาวางข้อความ Line ก่อนครับ', '#dc3545'); return; }
+
+            const text = raw.replace(/^\/\/\s*/, '');
+
+            // ต้องมี "อ้างอิง" เป็น marker หลัก
+            if (!text.includes('อ้างอิง')) {
+                showDocToast('ไม่พบรูปแบบที่รู้จักครับ (ต้องมี "อ้างอิง")', '#dc3545');
+                return;
+            }
+
+            // ดึงค่า
+            const caseId    = extractBetween(text, 'อ้างอิง ', '\n');
+            const rawName   = extractBetween(text, 'ชื่อผู้ร้อง : ', '\n');
+            const cType     = extractBetween(text, 'ช่องทางการติดต่อ : ', '\n');
+            const cDetail   = extractBetween(text, 'ชื่อช่องทางการติดต่อ : ', '\n');
+
+            // ดึง category (บรรทัดหลัง caseId)
+            const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+            const caseIdx = lines.findIndex(l => l.startsWith('อ้างอิง'));
+            let cat = '';
+            if (caseIdx !== -1 && caseIdx + 1 < lines.length) {
+                const nextLine = lines[caseIdx + 1];
+                // ต้องไม่ใช่ชื่อหรือช่องทาง
+                if (!nextLine.startsWith('ชื่อผู้ร้อง') && !nextLine.startsWith('ช่องทาง')) {
+                    cat = nextLine;
+                }
+            }
+
+            // ── Fill fields ──
+            if (caseId)  document.getElementById('p2_case_id').value  = caseId;
+            if (rawName) document.getElementById('p2_name').value     = rawName;
+            if (cDetail) document.getElementById('p2_contact_detail').value = cDetail;
+
+            // Set channel type
+            if (cType) {
+                const sel = document.getElementById('p2_contact_type');
+                for (let i = 0; i < sel.options.length; i++) {
+                    if (sel.options[i].value === cType) { sel.value = cType; break; }
+                }
+            }
+
+            // Set category
+            if (cat) {
+                const catSel = document.getElementById('p2_category');
+                let found = false;
+                for (let i = 0; i < catSel.options.length; i++) {
+                    if (catSel.options[i].value === cat) { catSel.value = cat; found = true; break; }
+                }
+                if (!found) {
+                    // ลอง fuzzy match — หา option ที่ใกล้เคียง
+                    for (let i = 0; i < catSel.options.length; i++) {
+                        if (catSel.options[i].value !== 'other' && cat.includes(catSel.options[i].value.slice(0, 20))) {
+                            catSel.value = catSel.options[i].value;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        catSel.value = 'other';
+                        document.getElementById('p2_category_other').value = cat;
+                    }
+                }
+                checkCategoryOther();
+            }
+
+            showDocToast('นำเข้าสำเร็จ ✓ ตรวจสอบและกดใส่ข้อมูลได้เลยครับ', '#2b8a3e');
+            setTimeout(() => {
+                document.querySelector('#page2 .box-top').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 150);
         }
     </script>
 </body>
